@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import TalentForm from "@/components/agent/TalentForm";
 import TalentNotes from "@/components/agent/TalentNotes";
+import { getCurrentOrg } from "@/lib/supabase/org";
 
 export default async function TalentProfilePage({
   params,
@@ -16,11 +17,14 @@ export default async function TalentProfilePage({
 
   if (!user) redirect("/login");
 
+  const orgMembership = await getCurrentOrg(supabase, user.id);
+  if (!orgMembership) redirect("/onboarding");
+
   const { data: talent } = await supabase
     .from("talents")
-    .select("*, talent_chips(chip_id, chips(id, label, color))")
+    .select("*, talent_chips(chip_id, chips(id, label, color)), talent_photos(id, url, sort_order, label)")
     .eq("id", id)
-    .eq("agent_id", user.id)
+    .eq("org_id", orgMembership.orgId)
     .single();
 
   if (!talent) notFound();
@@ -28,7 +32,7 @@ export default async function TalentProfilePage({
   const { data: chips } = await supabase
     .from("chips")
     .select("*")
-    .eq("agent_id", user.id)
+    .eq("org_id", orgMembership.orgId)
     .order("label");
 
   const { data: notes } = await supabase
@@ -39,7 +43,7 @@ export default async function TalentProfilePage({
 
   return (
     <div>
-      <TalentForm talent={talent} chips={chips ?? []} agentId={user.id} />
+      <TalentForm talent={talent} chips={chips ?? []} agentId={user.id} orgId={orgMembership.orgId} />
       <TalentNotes talentId={id} notes={notes ?? []} />
     </div>
   );

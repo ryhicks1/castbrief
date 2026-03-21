@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { renderInviteEmail } from "@/lib/resend/templates/InviteEmail";
+import { sendEmail } from "@/lib/resend/client";
 
 export async function POST(request: Request) {
   try {
@@ -51,6 +53,30 @@ export async function POST(request: Request) {
     const baseUrl =
       process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const url = `${baseUrl}/join/${data.token}`;
+
+    // Send invite email if email was provided
+    if (email) {
+      try {
+        const { data: agentProfile } = await supabase
+          .from("profiles")
+          .select("full_name, agency_name")
+          .eq("id", user.id)
+          .single();
+
+        const agentName = agentProfile?.full_name || "Your Agent";
+        const agencyName = agentProfile?.agency_name || agentProfile?.full_name || "CastingBrief";
+
+        const { subject, html } = renderInviteEmail({
+          agentName,
+          agencyName,
+          talentName: talentName || "Talent",
+          inviteUrl: url,
+        });
+        await sendEmail(email, subject, html);
+      } catch (e) {
+        console.error("Failed to send invite email:", e);
+      }
+    }
 
     return NextResponse.json({ token: data.token, url });
   } catch (error) {

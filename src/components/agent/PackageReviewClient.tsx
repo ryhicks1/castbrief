@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Badge, TalentPhoto } from "@/components/ui";
 import MediaRequestModal from "@/components/shared/MediaRequestModal";
+import MessageModal from "@/components/shared/MessageModal";
 import {
   Copy,
   Send,
   MessageSquare,
+  Mail,
   GripVertical,
   ChevronDown,
   StickyNote,
@@ -16,6 +19,8 @@ import {
   Clock,
   ArrowLeft,
   Bell,
+  Loader2,
+  CopyPlus,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -38,6 +43,8 @@ interface PackageReviewProps {
     sortOrder: number;
     clientPick: boolean;
     clientComment: string | null;
+    clientStatus: string | null;
+    clientRating: number | null;
     isHiddenByClient: boolean;
     mediaRequested: boolean;
     uploadStatus: string;
@@ -77,16 +84,23 @@ export default function PackageReviewClient({
   talents: initialTalents,
   agencyName,
 }: PackageReviewProps) {
+  const router = useRouter();
   const [talents, setTalents] = useState(initialTalents);
   const [agentNotes, setAgentNotes] = useState(pkg.agent_notes || "");
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [showMessageModal, setShowMessageModal] = useState(false);
+  const [messageTalent, setMessageTalent] = useState<{ id: string; name: string } | null>(null);
+  const [copyingSelected, setCopyingSelected] = useState(false);
 
   const pickCount = talents.filter((t) => t.clientPick).length;
   const commentCount = talents.filter((t) => t.clientComment).length;
   const hiddenCount = talents.filter((t) => t.isHiddenByClient).length;
+  const selectedCount = talents.filter(
+    (t) => t.clientStatus === "yes" || (t.clientRating != null && t.clientRating > 0)
+  ).length;
 
   // Group talents by group_label
   const groups = new Map<string | null, typeof talents>();
@@ -208,6 +222,32 @@ export default function PackageReviewClient({
     });
   }
 
+  async function handleCopySelected() {
+    setCopyingSelected(true);
+    try {
+      const res = await fetch(`/api/packages/${pkg.id}/copy`, {
+        method: "POST",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        router.push(`/agent/packages/${data.id}/review`);
+      }
+    } catch (err) {
+      console.error("Copy selected failed:", err);
+    } finally {
+      setCopyingSelected(false);
+    }
+  }
+
+  function openMessageModal(talentId?: string, talentName?: string) {
+    if (talentId && talentName) {
+      setMessageTalent({ id: talentId, name: talentName });
+    } else {
+      setMessageTalent(null);
+    }
+    setShowMessageModal(true);
+  }
+
   const selectedForMedia = talents
     .filter((t) => t.clientPick)
     .map((t) => ({
@@ -257,11 +297,17 @@ export default function PackageReviewClient({
           </div>
 
           {/* Stats row */}
-          <div className="flex items-center gap-4 mb-6 text-xs text-[#8B8D93]">
+          <div className="flex items-center gap-4 mb-6 text-xs text-[#8B8D93] flex-wrap">
             <span>{talents.length} talent</span>
             <span className="text-[#1E2128]">|</span>
-            <span className="text-green-400">
-              {pickCount} pick{pickCount !== 1 ? "s" : ""}
+            <span className="text-emerald-400">
+              {talents.filter((t) => t.clientStatus === "yes").length} Yes
+            </span>
+            <span className="text-red-400">
+              {talents.filter((t) => t.clientStatus === "no").length} No
+            </span>
+            <span className="text-amber-400">
+              {talents.filter((t) => t.clientStatus === "maybe").length} Maybe
             </span>
             {commentCount > 0 && (
               <>
@@ -320,6 +366,9 @@ export default function PackageReviewClient({
                         onSendReminder={() =>
                           handleSendReminder(talent.packageTalentId)
                         }
+                        onMessage={() =>
+                          openMessageModal(talent.talentId, talent.full_name)
+                        }
                       />
                     );
                   })}
@@ -356,6 +405,9 @@ export default function PackageReviewClient({
                   onDrop={() => handleDrop(index)}
                   onSendReminder={() =>
                     handleSendReminder(talent.packageTalentId)
+                  }
+                  onMessage={() =>
+                    openMessageModal(talent.talentId, talent.full_name)
                   }
                 />
               ))}
@@ -425,8 +477,16 @@ export default function PackageReviewClient({
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#8B8D93]">Picks</span>
-                  <span className="text-[#E8E3D8]">{pickCount}</span>
+                  <span className="text-[#8B8D93]">Yes</span>
+                  <span className="text-emerald-400">{talents.filter((t) => t.clientStatus === "yes").length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#8B8D93]">No</span>
+                  <span className="text-red-400">{talents.filter((t) => t.clientStatus === "no").length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#8B8D93]">Maybe</span>
+                  <span className="text-amber-400">{talents.filter((t) => t.clientStatus === "maybe").length}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#8B8D93]">Comments</span>
@@ -457,6 +517,27 @@ export default function PackageReviewClient({
                     Request Media ({selectedForMedia.length})
                   </button>
                 )}
+                {selectedCount > 0 && (
+                  <button
+                    onClick={handleCopySelected}
+                    disabled={copyingSelected}
+                    className="flex items-center justify-center gap-2 w-full rounded-lg bg-[#1E2128] border border-[#2A2D35] px-4 py-2 text-sm text-[#E8E3D8] hover:bg-[#262930] transition disabled:opacity-50"
+                  >
+                    {copyingSelected ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <CopyPlus size={14} />
+                    )}
+                    Copy Selected ({selectedCount})
+                  </button>
+                )}
+                <button
+                  onClick={() => openMessageModal()}
+                  className="flex items-center justify-center gap-2 w-full rounded-lg bg-[#1E2128] border border-[#2A2D35] px-4 py-2 text-sm text-[#E8E3D8] hover:bg-[#262930] transition"
+                >
+                  <Mail size={14} />
+                  Message All
+                </button>
                 {talents.some(
                   (t) =>
                     t.mediaRequested && t.uploadStatus === "pending"
@@ -495,6 +576,17 @@ export default function PackageReviewClient({
           onSuccess={handleMediaRequestSuccess}
         />
       )}
+
+      {/* Message Modal */}
+      {showMessageModal && (
+        <MessageModal
+          packageId={pkg.id}
+          talentId={messageTalent?.id}
+          talentName={messageTalent?.name}
+          onClose={() => setShowMessageModal(false)}
+          onSuccess={() => setShowMessageModal(false)}
+        />
+      )}
     </div>
   );
 }
@@ -512,6 +604,7 @@ function TalentReviewCard({
   onDragOver,
   onDrop,
   onSendReminder,
+  onMessage,
 }: {
   talent: PackageReviewProps["talents"][number];
   index: number;
@@ -523,6 +616,7 @@ function TalentReviewCard({
   onDragOver: (e: React.DragEvent) => void;
   onDrop: () => void;
   onSendReminder: () => void;
+  onMessage: () => void;
 }) {
   const [localNote, setLocalNote] = useState(talent.agentNote || "");
   const [showGroupInput, setShowGroupInput] = useState(false);
@@ -564,10 +658,25 @@ function TalentReviewCard({
 
         {/* Client activity badges */}
         <div className="absolute top-2 right-2 flex flex-col gap-1">
-          {talent.clientPick && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-green-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+          {talent.clientStatus === "yes" && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
               <CheckCircle2 size={10} />
-              Selected
+              Yes
+            </span>
+          )}
+          {talent.clientStatus === "no" && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+              No
+            </span>
+          )}
+          {talent.clientStatus === "maybe" && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+              Maybe
+            </span>
+          )}
+          {talent.clientRating != null && (
+            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#B8964C] text-[10px] font-bold text-[#0F0F12]">
+              {talent.clientRating}
             </span>
           )}
           {talent.isHiddenByClient && (
@@ -651,6 +760,13 @@ function TalentReviewCard({
           />
 
           <div className="flex items-center gap-1">
+            <button
+              onClick={onMessage}
+              className="rounded p-1 text-[#8B8D93] hover:text-[#C9A84C] hover:bg-[#C9A84C]/10 transition"
+              title="Message talent"
+            >
+              <Mail size={14} />
+            </button>
             {talent.uploadStatus === "pending" && (
               <button
                 onClick={onSendReminder}

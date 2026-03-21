@@ -2,7 +2,7 @@
 
 const colorMap = {
   green: { dot: "bg-green-400", text: "text-green-400", bg: "bg-green-400/10" },
-  gold: { dot: "bg-[#C9A84C]", text: "text-[#C9A84C]", bg: "bg-[#C9A84C]/10" },
+  gold: { dot: "bg-[#B8964C]", text: "text-[#B8964C]", bg: "bg-[#B8964C]/10" },
   muted: { dot: "bg-gray-400", text: "text-gray-400", bg: "bg-gray-400/10" },
   red: { dot: "bg-red-400", text: "text-red-400", bg: "bg-red-400/10" },
 } as const;

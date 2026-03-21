@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import PackageReviewClient from "@/components/agent/PackageReviewClient";
+import { getCurrentOrg } from "@/lib/supabase/org";
 
 export default async function PackageReviewPage({
   params,
@@ -15,6 +16,9 @@ export default async function PackageReviewPage({
 
   if (!user) redirect("/login");
 
+  const orgMembership = await getCurrentOrg(supabase, user.id);
+  if (!orgMembership) redirect("/onboarding");
+
   const { data: pkg } = await supabase
     .from("packages")
     .select(
@@ -22,6 +26,7 @@ export default async function PackageReviewPage({
        created_at, last_viewed_at, dropbox_folder_url,
        package_talents(
          id, talent_id, sort_order, client_pick, client_comment,
+         client_status, client_rating,
          is_hidden_by_client, media_requested, upload_status,
          upload_token, agent_note, group_label,
          talents(
@@ -32,17 +37,10 @@ export default async function PackageReviewPage({
        )`
     )
     .eq("id", id)
-    .eq("agent_id", user.id)
+    .eq("org_id", orgMembership.orgId)
     .single();
 
   if (!pkg) redirect("/agent/dashboard");
-
-  // Fetch agent profile for agency name
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("agency_name")
-    .eq("id", user.id)
-    .single();
 
   // Normalize joined data
   const talents = pkg.package_talents
@@ -53,6 +51,8 @@ export default async function PackageReviewPage({
         sort_order: number;
         client_pick: boolean;
         client_comment: string | null;
+        client_status: string | null;
+        client_rating: number | null;
         is_hidden_by_client: boolean;
         media_requested: boolean;
         upload_status: string;
@@ -104,6 +104,8 @@ export default async function PackageReviewPage({
           sortOrder: pt.sort_order,
           clientPick: pt.client_pick,
           clientComment: pt.client_comment,
+          clientStatus: pt.client_status as 'yes' | 'no' | 'maybe' | null,
+          clientRating: pt.client_rating,
           isHiddenByClient: pt.is_hidden_by_client,
           mediaRequested: pt.media_requested,
           uploadStatus: pt.upload_status,
@@ -139,7 +141,7 @@ export default async function PackageReviewPage({
         dropbox_folder_url: pkg.dropbox_folder_url,
       }}
       talents={talents as any}
-      agencyName={profile?.agency_name || ""}
+      agencyName={orgMembership.org?.name || ""}
     />
   );
 }

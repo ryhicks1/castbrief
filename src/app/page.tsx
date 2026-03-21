@@ -62,11 +62,11 @@ const features = [
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[#0D0F14] text-[#E8E3D8]">
+    <main className="min-h-screen bg-[#0F0F12] text-[#E8E3D8]">
       {/* ─── Nav ─── */}
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-        <Link href="/" className="text-xl font-bold tracking-tight text-[#C9A84C]">
-          CastBrief
+        <Link href="/" className="text-xl font-bold tracking-tight text-[#B8964C]">
+          CastingBrief
         </Link>
         <div className="flex items-center gap-4">
           <Link
@@ -77,7 +77,7 @@ export default function Home() {
           </Link>
           <Link
             href="/signup"
-            className="rounded-lg bg-[#C9A84C] px-4 py-2 text-sm font-semibold text-[#0D0F14] hover:bg-[#D4B35C] transition-colors"
+            className="rounded-lg bg-[#B8964C] px-4 py-2 text-sm font-semibold text-[#0F0F12] hover:bg-[#C9A64C] transition-colors"
           >
             Get Started
           </Link>
@@ -85,9 +85,9 @@ export default function Home() {
       </nav>
 
       {/* ─── Hero ─── */}
-      <section className="mx-auto max-w-4xl px-6 pt-24 pb-32 text-center">
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-tight">
-          <span className="text-[#C9A84C]">CastBrief</span>
+      <section className="mx-auto max-w-4xl px-6 pt-28 pb-36 text-center">
+        <h1 className="font-[family-name:var(--font-display)] text-4xl sm:text-5xl md:text-6xl tracking-tight leading-tight">
+          <span className="text-[#B8964C]">CastingBrief</span>
           <br />
           <span className="text-[#E8E3D8]">
             Talent packaging, done right
@@ -102,13 +102,13 @@ export default function Home() {
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
             href="/signup"
-            className="w-full sm:w-auto rounded-lg bg-gradient-to-r from-[#C9A84C] to-[#B8943F] px-8 py-3.5 text-sm font-semibold text-[#0D0F14] hover:from-[#D4B35C] hover:to-[#C9A84C] transition-all"
+            className="w-full sm:w-auto rounded-lg bg-[#B8964C] px-8 py-3.5 text-sm font-semibold text-[#0F0F12] hover:bg-[#C9A64C] transition-all duration-300 active:scale-[0.98]"
           >
-            Start Packaging Talent
+            Create My First Package
           </Link>
           <Link
             href="/login"
-            className="w-full sm:w-auto rounded-lg border border-[#2A2D35] bg-[#161920] px-8 py-3.5 text-sm font-medium text-[#E8E3D8] hover:bg-[#1E2128] transition-colors"
+            className="w-full sm:w-auto rounded-lg border border-[#2A2D35] bg-[#13151A] px-8 py-3.5 text-sm font-medium text-[#E8E3D8] hover:bg-[#1E2128] transition-colors"
           >
             I received a package
           </Link>
@@ -117,14 +117,14 @@ export default function Home() {
 
       {/* ─── How It Works ─── */}
       <section className="border-t border-[#1E2128]">
-        <div className="mx-auto max-w-5xl px-6 py-24">
-          <h2 className="text-center text-2xl sm:text-3xl font-semibold tracking-tight">
+        <div className="mx-auto max-w-5xl px-6 py-28">
+          <h2 className="font-[family-name:var(--font-display)] text-center text-2xl sm:text-3xl tracking-tight">
             How it works
           </h2>
           <div className="mt-14 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {steps.map((step) => (
               <div key={step.number}>
-                <span className="text-xs font-mono text-[#C9A84C]">
+                <span className="text-xs font-mono text-[#B8964C]">
                   {step.number}
                 </span>
                 <h3 className="mt-2 text-lg font-semibold">{step.title}</h3>
@@ -138,16 +138,16 @@ export default function Home() {
       </section>
 
       {/* ─── Features ─── */}
-      <section className="border-t border-[#1E2128] bg-[#0D0F14]">
-        <div className="mx-auto max-w-5xl px-6 py-24">
-          <h2 className="text-center text-2xl sm:text-3xl font-semibold tracking-tight">
+      <section className="border-t border-[#1E2128] bg-[#0F0F12]">
+        <div className="mx-auto max-w-5xl px-6 py-28">
+          <h2 className="font-[family-name:var(--font-display)] text-center text-2xl sm:text-3xl tracking-tight">
             Everything you need to manage submissions
           </h2>
-          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-14 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((feature) => (
               <div
                 key={feature.title}
-                className="rounded-xl border border-[#1E2128] bg-[#161920] p-6"
+                className="rounded-xl bg-[#13151A] p-6"
               >
                 <h3 className="text-sm font-semibold">{feature.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-[#8B8D93]">
@@ -161,8 +161,8 @@ export default function Home() {
 
       {/* ─── CTA: Agents ─── */}
       <section className="border-t border-[#1E2128]">
-        <div className="mx-auto max-w-3xl px-6 py-24 text-center">
-          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+        <div className="mx-auto max-w-3xl px-6 py-28 text-center">
+          <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl tracking-tight">
             Ready to modernize your workflow?
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-[#8B8D93] leading-relaxed">
@@ -171,7 +171,7 @@ export default function Home() {
           </p>
           <Link
             href="/signup"
-            className="mt-8 inline-block rounded-lg bg-gradient-to-r from-[#C9A84C] to-[#B8943F] px-10 py-3.5 text-sm font-semibold text-[#0D0F14] hover:from-[#D4B35C] hover:to-[#C9A84C] transition-all"
+            className="mt-8 inline-block rounded-lg bg-[#B8964C] px-10 py-3.5 text-sm font-semibold text-[#0F0F12] hover:bg-[#C9A64C] transition-all duration-300 active:scale-[0.98]"
           >
             Create Your Agent Account
           </Link>
@@ -179,9 +179,9 @@ export default function Home() {
       </section>
 
       {/* ─── CTA: Clients ─── */}
-      <section className="border-t border-[#1E2128] bg-[#161920]">
+      <section className="border-t border-[#1E2128] bg-[#13151A]">
         <div className="mx-auto max-w-3xl px-6 py-20 text-center">
-          <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">
+          <h2 className="font-[family-name:var(--font-display)] text-xl sm:text-2xl tracking-tight">
             Are you a casting director or client?
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-sm text-[#8B8D93] leading-relaxed">
@@ -191,7 +191,7 @@ export default function Home() {
           </p>
           <Link
             href="/login"
-            className="mt-6 inline-block rounded-lg border border-[#2A2D35] bg-[#0D0F14] px-8 py-3 text-sm font-medium text-[#E8E3D8] hover:bg-[#1E2128] transition-colors"
+            className="mt-6 inline-block rounded-lg border border-[#2A2D35] bg-[#0F0F12] px-8 py-3 text-sm font-medium text-[#E8E3D8] hover:bg-[#1E2128] transition-colors"
           >
             Sign In to Your Account
           </Link>
@@ -199,10 +199,10 @@ export default function Home() {
       </section>
 
       {/* ─── Footer ─── */}
-      <footer className="border-t border-[#1E2128] bg-[#0D0F14]">
+      <footer className="border-t border-[#1E2128] bg-[#0F0F12]">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-8 sm:flex-row">
-          <Link href="/" className="text-sm font-semibold text-[#C9A84C]">
-            CastBrief
+          <Link href="/" className="text-sm font-semibold text-[#B8964C]">
+            CastingBrief
           </Link>
           <div className="flex gap-6 text-xs text-[#8B8D93]">
             <Link href="/privacy" className="hover:text-[#E8E3D8] transition-colors">
@@ -212,14 +212,14 @@ export default function Home() {
               Terms
             </Link>
             <a
-              href="mailto:support@castbrief.com"
+              href="mailto:support@castingbrief.com"
               className="hover:text-[#E8E3D8] transition-colors"
             >
               Contact
             </a>
           </div>
           <span className="text-xs text-[#8B8D93]">
-            &copy; 2026 CastBrief. All rights reserved.
+            &copy; 2026 CastingBrief. All rights reserved.
           </span>
         </div>
       </footer>

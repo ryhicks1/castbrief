@@ -39,6 +39,13 @@ export async function PATCH(
       allowed.client_comment = updates.client_comment;
     if ("is_hidden_by_client" in updates)
       allowed.is_hidden_by_client = updates.is_hidden_by_client;
+    if ("client_status" in updates) {
+      allowed.client_status = updates.client_status;
+      // Keep client_pick in sync with client_status
+      allowed.client_pick = updates.client_status === "yes";
+    }
+    if ("client_rating" in updates)
+      allowed.client_rating = updates.client_rating;
 
     if (Object.keys(allowed).length === 0) {
       return NextResponse.json({ error: "No valid fields" }, { status: 400 });

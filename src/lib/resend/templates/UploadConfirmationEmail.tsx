@@ -9,7 +9,7 @@ export function renderUploadConfirmationEmail({
   packageName,
   agentDashboardUrl,
 }: UploadConfirmationEmailProps): { subject: string; html: string } {
-  const url = agentDashboardUrl || `${process.env.NEXT_PUBLIC_APP_URL || "https://castbrief.com"}/agent/dashboard`;
+  const url = agentDashboardUrl || `${process.env.NEXT_PUBLIC_APP_URL || "https://castingbrief.com"}/agent/dashboard`;
   const subject = `${talentName} has uploaded their materials`;
 
   const html = `
@@ -21,7 +21,7 @@ export function renderUploadConfirmationEmail({
     <tr><td align="center">
       <table width="100%" style="max-width:480px;">
         <tr><td style="padding-bottom:24px;">
-          <span style="color:#C9A84C;font-size:18px;font-weight:bold;">CastBrief</span>
+          <span style="color:#C9A84C;font-size:18px;font-weight:bold;">CastingBrief</span>
         </td></tr>
         <tr><td style="background-color:#161920;border-radius:12px;padding:32px;border:1px solid #1E2128;">
           <p style="color:#8B8D93;font-size:13px;margin:0 0 8px;">UPLOAD COMPLETE</p>

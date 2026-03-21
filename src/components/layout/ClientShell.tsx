@@ -44,10 +44,10 @@ export default function ClientShell({ children }: { children: React.ReactNode })
       <div className="flex h-14 items-center border-b border-[#1E2128] px-4">
         <Link
           href="/client/projects"
-          className="text-lg font-bold text-[#C9A84C] hover:text-[#D4B35C] transition-colors"
+          className="text-lg font-bold text-[#B8964C] hover:text-[#C9A64C] transition-colors"
           onClick={() => setSidebarOpen(false)}
         >
-          CastBrief
+          CastingBrief
         </Link>
       </div>
       <nav className="flex-1 px-2 py-4 space-y-1">
@@ -61,8 +61,8 @@ export default function ClientShell({ children }: { children: React.ReactNode })
               onClick={() => setSidebarOpen(false)}
               className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
                 active
-                  ? "border-l-2 border-[#C9A84C] bg-[#C9A84C]/5 text-[#C9A84C]"
-                  : "text-[#8B8D93] hover:bg-[#161920] hover:text-[#E8E3D8]"
+                  ? "relative before:content-[''] before:absolute before:left-1 before:top-1/2 before:-translate-y-1/2 before:w-1 before:h-1 before:rounded-full before:bg-[#B8964C] bg-[#B8964C]/5 text-[#B8964C]"
+                  : "text-[#8B8D93] hover:bg-[#13151A] hover:text-[#E8E3D8]"
               }`}
             >
               <Icon size={18} />
@@ -75,7 +75,7 @@ export default function ClientShell({ children }: { children: React.ReactNode })
   );
 
   return (
-    <div className="flex h-screen bg-[#0D0F14]">
+    <div className="flex h-screen bg-[#0F0F12]">
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-56 flex-col border-r border-[#1E2128]">
         {sidebarContent}
@@ -88,7 +88,7 @@ export default function ClientShell({ children }: { children: React.ReactNode })
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setSidebarOpen(false)}
           />
-          <aside className="relative flex w-56 h-full flex-col bg-[#0D0F14] border-r border-[#1E2128] animate-[slide-in-left_0.2s_ease-out]">
+          <aside className="relative flex w-56 h-full flex-col bg-[#0F0F12] border-r border-[#1E2128] animate-[slide-in-left_0.3s_ease-out]">
             <button
               onClick={() => setSidebarOpen(false)}
               className="absolute top-4 right-3 text-[#8B8D93] hover:text-[#E8E3D8] transition-colors"

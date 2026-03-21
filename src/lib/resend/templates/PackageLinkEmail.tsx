@@ -9,7 +9,7 @@ export function renderPackageLinkEmail({
   packageName,
   token,
 }: PackageLinkEmailProps): { subject: string; html: string } {
-  const url = `${process.env.NEXT_PUBLIC_APP_URL || "https://castbrief.com"}/p/${token}`;
+  const url = `${process.env.NEXT_PUBLIC_APP_URL || "https://castingbrief.com"}/p/${token}`;
   const subject = `${agentName} has shared a talent package with you`;
 
   const html = `
@@ -21,7 +21,7 @@ export function renderPackageLinkEmail({
     <tr><td align="center">
       <table width="100%" style="max-width:480px;">
         <tr><td style="padding-bottom:24px;">
-          <span style="color:#C9A84C;font-size:18px;font-weight:bold;">CastBrief</span>
+          <span style="color:#C9A84C;font-size:18px;font-weight:bold;">CastingBrief</span>
         </td></tr>
         <tr><td style="background-color:#161920;border-radius:12px;padding:32px;border:1px solid #1E2128;">
           <p style="color:#8B8D93;font-size:13px;margin:0 0 8px;">TALENT PACKAGE</p>
@@ -32,7 +32,7 @@ export function renderPackageLinkEmail({
           </a>
         </td></tr>
         <tr><td style="padding-top:24px;">
-          <p style="color:#6B7280;font-size:12px;margin:0;">This link was sent via CastBrief. If you did not expect this email, you can safely ignore it.</p>
+          <p style="color:#6B7280;font-size:12px;margin:0;">This link was sent via CastingBrief. If you did not expect this email, you can safely ignore it.</p>
         </td></tr>
       </table>
     </td></tr>

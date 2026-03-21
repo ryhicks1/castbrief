@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, DM_Serif_Display } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -12,20 +12,26 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const dmSerifDisplay = DM_Serif_Display({
+  variable: "--font-display",
+  weight: "400",
+  subsets: ["latin"],
+});
+
 export const icons = {
   icon: "/favicon.svg",
 };
 
 export const metadata: Metadata = {
-  title: "CastBrief — Talent Packaging Platform",
+  title: "CastingBrief — Talent Packaging Platform",
   description:
     "Send curated talent packages to clients. Collect self-tapes via Dropbox. Manage your entire casting workflow.",
   openGraph: {
-    title: "CastBrief — Talent Packaging Platform",
+    title: "CastingBrief — Talent Packaging Platform",
     description:
       "Send curated talent packages to clients. Collect self-tapes via Dropbox. Manage your entire casting workflow.",
     type: "website",
-    url: "https://castbrief.com",
+    url: "https://castingbrief.com",
   },
 };
 
@@ -37,7 +43,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${dmSerifDisplay.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

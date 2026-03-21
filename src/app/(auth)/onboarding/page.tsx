@@ -81,6 +81,39 @@ export default function OnboardingPage() {
       return;
     }
 
+    // Auto-create organization for agents
+    if (role === "agent" && agencyName.trim()) {
+      const slug = agencyName
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+
+      const { data: orgData, error: orgError } = await supabase
+        .from("organizations")
+        .insert({ name: agencyName.trim(), slug })
+        .select("id")
+        .single();
+
+      if (orgError) {
+        setError(orgError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (orgData) {
+        const { error: memberError } = await supabase
+          .from("org_members")
+          .insert({ org_id: orgData.id, user_id: user.id, role: "admin" });
+
+        if (memberError) {
+          setError(memberError.message);
+          setLoading(false);
+          return;
+        }
+      }
+    }
+
     // Check for pending invite token
     const params = new URLSearchParams(window.location.search);
     const inviteToken = params.get("invite");
@@ -111,12 +144,12 @@ export default function OnboardingPage() {
     <div className="flex min-h-screen items-center justify-center bg-[#0D0F14] px-4">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <span className="text-2xl font-bold text-[#C9A84C]">CastBrief</span>
+          <span className="text-2xl font-bold text-[#C9A84C]">CastingBrief</span>
         </div>
 
         <div className="rounded-xl border border-[#1E2128] bg-[#161920] p-6 sm:p-8">
           <h1 className="mb-2 text-center text-xl font-bold text-[#E8E3D8]">
-            Welcome to CastBrief
+            Welcome to CastingBrief
           </h1>
           <p className="mb-6 text-center text-sm text-[#8B8D93]">
             Tell us about yourself to get started

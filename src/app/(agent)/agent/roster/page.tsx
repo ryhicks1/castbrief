@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import RosterClient from "@/components/agent/RosterClient";
+import { getCurrentOrg } from "@/lib/supabase/org";
 
 export default async function RosterPage() {
   const supabase = await createClient();
@@ -10,16 +11,19 @@ export default async function RosterPage() {
 
   if (!user) redirect("/login");
 
+  const orgMembership = await getCurrentOrg(supabase, user.id);
+  if (!orgMembership) redirect("/onboarding");
+
   const { data: talents } = await supabase
     .from("talents")
     .select("*, talent_chips(chip_id, chips(id, label, color))")
-    .eq("agent_id", user.id)
+    .eq("org_id", orgMembership.orgId)
     .order("created_at", { ascending: false });
 
   const { data: chips } = await supabase
     .from("chips")
     .select("*")
-    .eq("agent_id", user.id)
+    .eq("org_id", orgMembership.orgId)
     .order("label");
 
   return (

@@ -21,7 +21,7 @@ export default async function JoinPage({
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#0D0F14] px-4">
         <div className="w-full max-w-md text-center">
-          <span className="text-2xl font-bold text-[#C9A84C]">CastBrief</span>
+          <span className="text-2xl font-bold text-[#C9A84C]">CastingBrief</span>
           <div className="mt-8 rounded-xl border border-[#1E2128] bg-[#161920] p-6 sm:p-8">
             <h1 className="text-xl font-bold text-[#E8E3D8] mb-2">
               Invalid Invite
@@ -54,7 +54,7 @@ export default async function JoinPage({
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#0D0F14] px-4">
       <div className="w-full max-w-md text-center">
-        <span className="text-2xl font-bold text-[#C9A84C]">CastBrief</span>
+        <span className="text-2xl font-bold text-[#C9A84C]">CastingBrief</span>
         <div className="mt-8 rounded-xl border border-[#1E2128] bg-[#161920] p-6 sm:p-8">
           <h1 className="text-xl font-bold text-[#E8E3D8] mb-2">
             You&apos;ve been invited
@@ -62,7 +62,7 @@ export default async function JoinPage({
           <p className="text-sm text-[#8B8D93] mb-6">
             You&apos;ve been invited to join{" "}
             <span className="text-[#E8E3D8] font-medium">{agencyName}</span>
-            &apos;s roster on CastBrief.
+            &apos;s roster on CastingBrief.
           </p>
 
           {invite.talent_name && (

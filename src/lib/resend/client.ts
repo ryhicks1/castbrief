@@ -11,7 +11,7 @@ function getResend() {
 export async function sendEmail(to: string, subject: string, html: string) {
   const resend = getResend();
   const { data, error } = await resend.emails.send({
-    from: "CastBrief <noreply@castbrief.com>",
+    from: "CastingBrief <noreply@castingbrief.com>",
     to,
     subject,
     html,

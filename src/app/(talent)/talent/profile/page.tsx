@@ -19,10 +19,9 @@ export default async function TalentProfilePage() {
 
   if (!talent) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0D0F14] px-4">
+      <div className="flex items-center justify-center py-24 px-4">
         <div className="w-full max-w-md text-center">
-          <span className="text-2xl font-bold text-[#C9A84C]">CastBrief</span>
-          <div className="mt-8 rounded-xl border border-[#1E2128] bg-[#161920] p-6 sm:p-8">
+          <div className="rounded-xl border border-[#1E2128] bg-[#13151A] p-6 sm:p-8">
             <h1 className="text-xl font-bold text-[#E8E3D8] mb-2">
               No Roster Yet
             </h1>

@@ -33,14 +33,14 @@ export default function Avatar({
       <img
         src={src}
         alt={name}
-        className={`rounded-full object-cover ${sizeMap[size]} ${className}`}
+        className={`rounded-full object-cover photo-cinematic ${sizeMap[size]} ${className}`}
       />
     );
   }
 
   return (
     <div
-      className={`flex items-center justify-center rounded-full bg-[#C9A84C] font-semibold text-[#0D0F14] ${sizeMap[size]} ${className}`}
+      className={`flex items-center justify-center rounded-full bg-[#B8964C] font-semibold text-[#0F0F12] ${sizeMap[size]} ${className}`}
     >
       {getInitials(name)}
     </div>
@@ -69,8 +69,8 @@ export function InitialsAvatar({
         width: size,
         height: size,
         fontSize: size * 0.35,
-        background: "linear-gradient(135deg, #C9A84C, #8B6D1A)",
-        color: "#0D0F14",
+        background: "linear-gradient(135deg, #B8964C, #8B6D1A)",
+        color: "#0F0F12",
       }}
     >
       {initials}
@@ -115,7 +115,7 @@ export function TalentPhoto({
         <img
           src={photo_url}
           alt={name}
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover photo-cinematic transition-transform duration-500 group-hover:scale-105"
         />
       </div>
     );
@@ -133,7 +133,7 @@ export function TalentPhoto({
       <span
         className={`font-semibold ${photoSizeMap[size].fontSize}`}
         style={{
-          background: "linear-gradient(135deg, #C9A84C, #8B6D1A)",
+          background: "linear-gradient(135deg, #B8964C, #8B6D1A)",
           WebkitBackgroundClip: "text",
           WebkitTextFillColor: "transparent",
         }}

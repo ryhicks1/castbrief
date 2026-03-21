@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import DashboardClient from "@/components/agent/DashboardClient";
+import { getCurrentOrg } from "@/lib/supabase/org";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -10,12 +11,15 @@ export default async function DashboardPage() {
 
   if (!user) redirect("/login");
 
+  const orgMembership = await getCurrentOrg(supabase, user.id);
+  if (!orgMembership) redirect("/onboarding");
+
   const { data: packages } = await supabase
     .from("packages")
     .select(
-      "id, name, token, client_name, status, dropbox_folder_url, last_viewed_at, created_at, package_talents(id, talent_id, client_pick, client_comment, media_requested, upload_status, talents(full_name, photo_url))"
+      "id, name, token, client_name, status, dropbox_folder_url, last_viewed_at, created_at, package_talents(id, talent_id, client_pick, client_comment, client_status, client_rating, media_requested, upload_status, talents(full_name, photo_url))"
     )
-    .eq("agent_id", user.id)
+    .eq("org_id", orgMembership.orgId)
     .order("created_at", { ascending: false });
 
   // Supabase returns joined talents as an array; flatten to single object
@@ -27,6 +31,8 @@ export default async function DashboardPage() {
         talent_id: string;
         client_pick: boolean;
         client_comment: string | null;
+        client_status: string | null;
+        client_rating: number | null;
         media_requested: boolean;
         upload_status: string;
         talents: { full_name: string; photo_url: string | null } | { full_name: string; photo_url: string | null }[];

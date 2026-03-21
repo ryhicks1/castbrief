@@ -209,7 +209,7 @@ export default function PackageBuilder({
           {selectedTalents.length} talent included. Share this link with your
           client.
         </p>
-        <div className="w-full rounded-lg border border-[#2A2D35] bg-[#1E2128] p-3 text-sm text-[#C9A84C] break-all mb-4">
+        <div className="w-full rounded-lg border border-[#1E2128] bg-[#1E2128] p-3 text-sm text-[#B8964C] break-all mb-4">
           {generatedLink}
         </div>
         <div className="flex gap-3 w-full">
@@ -242,7 +242,7 @@ export default function PackageBuilder({
       <div className="flex-1 flex flex-col min-w-0">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-bold text-[#E8E3D8]">New Package</h1>
-          <span className="text-sm text-[#C9A84C]">
+          <span className="text-sm text-[#B8964C]">
             {selected.size} talent selected
           </span>
         </div>
@@ -252,7 +252,7 @@ export default function PackageBuilder({
           placeholder="Search talent..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="mb-3 w-full rounded-lg border border-[#2A2D35] bg-[#1E2128] px-3 py-2 text-sm text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#C9A84C] focus:outline-none"
+          className="mb-3 w-full rounded-lg border border-[#1E2128] bg-[#0F0F12] px-3 py-2 text-sm text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#B8964C] focus:outline-none transition-all duration-300"
         />
 
         {chips.length > 0 && (
@@ -272,22 +272,22 @@ export default function PackageBuilder({
         <div className="mb-2">
           <button
             onClick={selectAllVisible}
-            className="text-xs text-[#C9A84C] hover:underline"
+            className="text-xs text-[#B8964C] hover:underline"
           >
             Select All Visible ({filtered.length})
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto pr-1">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {filtered.map((talent) => (
               <label
                 key={talent.id}
-                className={`relative rounded-xl overflow-hidden cursor-pointer shadow-md shadow-black/10 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/20 transition-all duration-200 ${
+                className={`group relative rounded-xl overflow-hidden cursor-pointer shadow-lg shadow-black/20 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/30 transition-all duration-300 ${
                   selected.has(talent.id)
-                    ? "ring-2 ring-[#C9A84C] shadow-[0_0_12px_rgba(201,168,76,0.1)]"
+                    ? "ring-1 ring-[#B8964C] shadow-[0_0_24px_rgba(184,150,76,0.12)]"
                     : "ring-1 ring-[#1E2128] hover:ring-[#2A2D35]"
-                } bg-[#161920]`}
+                } bg-[#13151A]`}
               >
                 {/* Photo area */}
                 <div className="relative">
@@ -303,8 +303,8 @@ export default function PackageBuilder({
                     <div
                       className="flex items-center justify-center w-8 h-8 md:w-6 md:h-6 rounded border-2 transition-colors"
                       style={{
-                        borderColor: selected.has(talent.id) ? "#C9A84C" : "#8B8D93",
-                        backgroundColor: selected.has(talent.id) ? "#C9A84C" : "rgba(13,15,20,0.6)",
+                        borderColor: selected.has(talent.id) ? "#B8964C" : "#8B8D93",
+                        backgroundColor: selected.has(talent.id) ? "#B8964C" : "rgba(15,15,18,0.6)",
                       }}
                     >
                       <input
@@ -314,7 +314,7 @@ export default function PackageBuilder({
                         className="sr-only"
                       />
                       {selected.has(talent.id) && (
-                        <svg className="w-3 h-3 text-[#0D0F14]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <svg className="w-3 h-3 text-[#0F0F12]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                       )}
@@ -353,8 +353,8 @@ export default function PackageBuilder({
 
       {/* RIGHT — Package Config */}
       <div className="w-full lg:w-80 lg:shrink-0 order-first lg:order-none overflow-y-auto">
-        <div className="sticky top-0 rounded-xl border border-[#1E2128] bg-[#161920] p-5 space-y-4">
-          <div className="text-xs font-semibold uppercase tracking-wider text-[#C9A84C]">
+        <div className="sticky top-0 rounded-xl bg-[#13151A] p-5 space-y-4 shadow-lg shadow-black/20">
+          <div className="text-xs font-semibold uppercase tracking-wider text-[#B8964C]">
             Package Settings
           </div>
 
@@ -426,7 +426,7 @@ export default function PackageBuilder({
                 type="date"
                 value={expiryDate}
                 onChange={(e) => setExpiryDate(e.target.value)}
-                className="mt-2 w-full rounded-lg border border-[#2A2D35] bg-[#1E2128] px-3 py-2 text-sm text-[#E8E3D8] focus:border-[#C9A84C] focus:outline-none"
+                className="mt-2 w-full rounded-lg border border-[#1E2128] bg-[#0F0F12] px-3 py-2 text-sm text-[#E8E3D8] focus:border-[#B8964C] focus:outline-none transition-all duration-300"
               />
             )}
           </div>
@@ -464,7 +464,7 @@ function Toggle({
         aria-checked={checked}
         onClick={() => onChange(!checked)}
         className={`relative h-5 w-9 rounded-full transition-colors ${
-          checked ? "bg-[#C9A84C]" : "bg-[#2A2D35]"
+          checked ? "bg-[#B8964C]" : "bg-[#2A2D35]"
         }`}
       >
         <span

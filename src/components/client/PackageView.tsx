@@ -24,6 +24,8 @@ interface TalentData {
   links: Record<string, string> | null;
   chips: TalentChip[];
   clientPick: boolean;
+  clientStatus: "yes" | "no" | "maybe" | null;
+  clientRating: number | null;
   clientComment: string | null;
   isHiddenByClient: boolean;
   mediaRequested: boolean;
@@ -70,7 +72,7 @@ export default function PackageView({
   );
   const [commentingId, setCommentingId] = useState<string | null>(null);
 
-  const picks = talents.filter((t) => t.clientPick);
+  const picks = talents.filter((t) => t.clientStatus === "yes");
   const hiddenCount = talents.filter((t) => t.isHiddenByClient).length;
   const visibleTalents = showHidden
     ? talents
@@ -87,14 +89,37 @@ export default function PackageView({
     [token]
   );
 
-  function togglePick(id: string) {
+  function setStatus(id: string, newStatus: "yes" | "no" | "maybe") {
     setTalents((prev) =>
-      prev.map((t) =>
-        t.packageTalentId === id ? { ...t, clientPick: !t.clientPick } : t
-      )
+      prev.map((t) => {
+        if (t.packageTalentId !== id) return t;
+        const toggled = t.clientStatus === newStatus ? null : newStatus;
+        return {
+          ...t,
+          clientStatus: toggled,
+          clientPick: toggled === "yes",
+        };
+      })
     );
     const talent = talents.find((t) => t.packageTalentId === id);
-    patchTalent(id, { client_pick: !talent?.clientPick });
+    const toggled = talent?.clientStatus === newStatus ? null : newStatus;
+    patchTalent(id, {
+      client_status: toggled,
+      client_pick: toggled === "yes",
+    });
+  }
+
+  function setRating(id: string, rating: number) {
+    setTalents((prev) =>
+      prev.map((t) => {
+        if (t.packageTalentId !== id) return t;
+        const toggled = t.clientRating === rating ? null : rating;
+        return { ...t, clientRating: toggled };
+      })
+    );
+    const talent = talents.find((t) => t.packageTalentId === id);
+    const toggled = talent?.clientRating === rating ? null : rating;
+    patchTalent(id, { client_rating: toggled });
   }
 
   function hideTalent(id: string) {
@@ -136,10 +161,10 @@ export default function PackageView({
     <div className="max-w-5xl mx-auto px-4 py-8 sm:px-6">
       {/* Header */}
       <div className="mb-8">
-        <p className="text-xs font-semibold uppercase tracking-widest text-[#C9A84C] mb-2">
+        <p className="text-xs font-semibold uppercase tracking-widest text-[#B8964C] mb-2">
           Talent Package from {agencyName}
         </p>
-        <h1 className="text-2xl sm:text-3xl font-bold text-[#E8E3D8] mb-1">
+        <h1 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl text-[#E8E3D8] mb-1">
           {packageName}
         </h1>
         {recipientName && (
@@ -155,7 +180,7 @@ export default function PackageView({
           {picks.length > 0 && !mediaRequested && (
             <button
               onClick={() => setShowMediaModal(true)}
-              className="inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-[#C9A84C] to-[#B8943F] px-4 py-2 text-sm font-semibold text-[#0D0F14] hover:from-[#D4B35C] hover:to-[#C9A84C] transition"
+              className="inline-flex items-center gap-1 rounded-lg bg-[#B8964C] px-4 py-2 text-sm font-semibold text-[#0F0F12] hover:bg-[#C9A64C] transition-all duration-300"
             >
               Request Media ({picks.length})
             </button>
@@ -170,11 +195,11 @@ export default function PackageView({
 
       {/* Hidden banner */}
       {hiddenCount > 0 && !showHidden && (
-        <div className="mb-4 rounded-lg bg-[#161920] border border-[#1E2128] px-4 py-2 text-sm text-[#8B8D93]">
+        <div className="mb-4 rounded-lg bg-[#13151A] border border-[#1E2128] px-4 py-2 text-sm text-[#8B8D93]">
           {hiddenCount} talent hidden &mdash;{" "}
           <button
             onClick={() => setShowHidden(true)}
-            className="text-[#C9A84C] hover:underline"
+            className="text-[#B8964C] hover:underline"
           >
             Show all
           </button>
@@ -184,7 +209,7 @@ export default function PackageView({
         <div className="mb-4">
           <button
             onClick={() => setShowHidden(false)}
-            className="text-xs text-[#C9A84C] hover:underline"
+            className="text-xs text-[#B8964C] hover:underline"
           >
             Hide hidden talent again
           </button>
@@ -192,13 +217,14 @@ export default function PackageView({
       )}
 
       {/* Talent grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {visibleTalents.map((talent) => (
           <TalentCard
             key={talent.packageTalentId}
             talent={talent}
             isCommenting={commentingId === talent.packageTalentId}
-            onTogglePick={() => togglePick(talent.packageTalentId)}
+            onSetStatus={(s) => setStatus(talent.packageTalentId, s)}
+            onSetRating={(r) => setRating(talent.packageTalentId, r)}
             onHide={() => hideTalent(talent.packageTalentId)}
             onStartComment={() => setCommentingId(talent.packageTalentId)}
             onSaveComment={(c) => saveComment(talent.packageTalentId, c)}
@@ -210,7 +236,7 @@ export default function PackageView({
       {/* Media request modal */}
       {showMediaModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-[calc(100vw-2rem)] sm:max-w-md rounded-xl bg-[#161920] border border-[#1E2128] p-6 shadow-2xl shadow-black/40 animate-[modal-enter_0.2s_ease-out]">
+          <div className="w-full max-w-[calc(100vw-2rem)] sm:max-w-md rounded-xl bg-[#13151A] border border-[#1E2128] p-6 shadow-2xl shadow-black/40 animate-[modal-enter_0.3s_ease-out]">
             <h2 className="text-lg font-semibold text-[#E8E3D8] mb-4">
               Request Media
             </h2>
@@ -232,7 +258,7 @@ export default function PackageView({
             <div className="flex gap-3">
               <button
                 onClick={handleRequestMedia}
-                className="flex-1 rounded-lg bg-gradient-to-r from-[#C9A84C] to-[#B8943F] px-4 py-2 text-sm font-semibold text-[#0D0F14]"
+                className="flex-1 rounded-lg bg-[#B8964C] px-4 py-2 text-sm font-semibold text-[#0F0F12] hover:bg-[#C9A64C] transition-all duration-300"
               >
                 Confirm Request
               </button>
@@ -253,7 +279,8 @@ export default function PackageView({
 function TalentCard({
   talent,
   isCommenting,
-  onTogglePick,
+  onSetStatus,
+  onSetRating,
   onHide,
   onStartComment,
   onSaveComment,
@@ -261,7 +288,8 @@ function TalentCard({
 }: {
   talent: TalentData;
   isCommenting: boolean;
-  onTogglePick: () => void;
+  onSetStatus: (s: "yes" | "no" | "maybe") => void;
+  onSetRating: (r: number) => void;
   onHide: () => void;
   onStartComment: () => void;
   onSaveComment: (c: string) => void;
@@ -274,13 +302,20 @@ function TalentCard({
     ([, v]) => v && v.trim() !== ""
   );
 
+  const statusBorder =
+    talent.clientStatus === "yes"
+      ? "ring-1 ring-emerald-500/30"
+      : talent.clientStatus === "no"
+      ? "ring-1 ring-red-500/20 opacity-60"
+      : talent.clientStatus === "maybe"
+      ? "ring-1 ring-amber-500/30"
+      : "";
+
   return (
     <div
-      className={`rounded-xl overflow-hidden shadow-md shadow-black/10 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/20 transition-all duration-200 ${
-        talent.clientPick
-          ? "border-2 border-[#C9A84C] shadow-[0_0_20px_rgba(201,168,76,0.15)]"
-          : "border border-[#1E2128]"
-      } ${talent.isHiddenByClient ? "opacity-50" : ""} bg-[#161920]`}
+      className={`group rounded-xl overflow-hidden shadow-lg shadow-black/20 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/30 transition-all duration-300 ${statusBorder} ${
+        talent.isHiddenByClient ? "opacity-50" : ""
+      } bg-[#13151A]`}
     >
       {/* Photo area -- 4:5 aspect ratio headshot */}
       <div className="relative" style={{ aspectRatio: "4/5" }}>
@@ -288,7 +323,7 @@ function TalentCard({
           <img
             src={talent.photo_url}
             alt={talent.full_name}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover photo-cinematic transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
           <div
@@ -300,7 +335,7 @@ function TalentCard({
             <span
               className="text-5xl font-bold"
               style={{
-                background: "linear-gradient(135deg, #C9A84C, #8B6D1A)",
+                background: "linear-gradient(135deg, #B8964C, #8B6D1A)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
               }}
@@ -317,15 +352,27 @@ function TalentCard({
 
         {/* Name overlay at bottom of photo */}
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-3 pb-2 pt-8">
-          <h3 className="text-sm font-semibold text-white leading-tight">
+          <h3 className="font-[family-name:var(--font-display)] text-sm text-white leading-tight">
             {talent.full_name}
           </h3>
         </div>
 
-        {/* Selected badge on photo */}
-        {talent.clientPick && (
-          <div className="absolute top-3 right-3 rounded-full bg-[#C9A84C] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#0D0F14]">
-            Selected
+        {/* Rating badge on photo top-left */}
+        {talent.clientRating != null && (
+          <div className="absolute top-3 left-3 w-7 h-7 rounded-full bg-[#B8964C] flex items-center justify-center text-xs font-bold text-[#0F0F12]">
+            {talent.clientRating}
+          </div>
+        )}
+
+        {/* Status badge on photo top-right */}
+        {talent.clientStatus === "yes" && (
+          <div className="absolute top-3 right-3 rounded-full bg-emerald-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+            Yes
+          </div>
+        )}
+        {talent.clientStatus === "maybe" && (
+          <div className="absolute top-3 right-3 rounded-full bg-amber-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+            Maybe
           </div>
         )}
       </div>
@@ -377,7 +424,7 @@ function TalentCard({
                 href={url.startsWith("http") ? url : `https://${url}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded bg-[#1E2128] px-1.5 py-0.5 text-[10px] font-medium text-[#8B8D93] hover:text-[#C9A84C] hover:bg-[#C9A84C]/10 transition"
+                className="rounded bg-[#1E2128] px-1.5 py-0.5 text-[10px] font-medium text-[#8B8D93] hover:text-[#B8964C] hover:bg-[#B8964C]/10 transition"
               >
                 {linkLabels[key] || key}
               </a>
@@ -387,7 +434,7 @@ function TalentCard({
 
         {/* Existing comment */}
         {talent.clientComment && !isCommenting && (
-          <div className="mb-3 rounded-lg bg-[#0D0F14] px-3 py-2 text-xs text-[#8B8D93] flex items-start gap-1.5">
+          <div className="mb-3 rounded-lg bg-[#0F0F12] px-3 py-2 text-xs text-[#8B8D93] flex items-start gap-1.5">
             <MessageSquare size={14} className="shrink-0 mt-0.5" />
             <span>{talent.clientComment}</span>
           </div>
@@ -402,12 +449,12 @@ function TalentCard({
               placeholder="Leave a comment..."
               rows={2}
               autoFocus
-              className="w-full rounded-lg border border-[#2A2D35] bg-[#0D0F14] px-3 py-2 text-xs text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#C9A84C] focus:outline-none resize-none"
+              className="w-full rounded-lg border border-[#1E2128] bg-[#0F0F12] px-3 py-2 text-xs text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#B8964C] focus:outline-none resize-none"
             />
             <div className="flex gap-2 mt-1">
               <button
                 onClick={() => onSaveComment(comment)}
-                className="text-xs text-[#C9A84C] hover:underline"
+                className="text-xs text-[#B8964C] hover:underline"
               >
                 Save
               </button>
@@ -421,21 +468,41 @@ function TalentCard({
           </div>
         )}
 
-        {/* Actions -- compact row */}
+        {/* Status buttons row */}
         <div className="flex items-center gap-1.5 pt-2 border-t border-[#1E2128]">
           <button
-            onClick={onTogglePick}
-            className={`flex-1 rounded-lg px-3 min-h-[44px] sm:min-h-[36px] text-sm font-medium transition ${
-              talent.clientPick
-                ? "bg-[#C9A84C] text-[#0D0F14]"
-                : "bg-[#1E2128] text-[#E8E3D8] hover:bg-[#262930]"
+            onClick={() => onSetStatus("yes")}
+            className={`flex-1 rounded-lg min-h-[36px] text-sm font-medium transition-all duration-200 ${
+              talent.clientStatus === "yes"
+                ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
+                : "bg-[#1A1C22] text-[#8B8D93] hover:bg-[#262930]"
             }`}
           >
-            {talent.clientPick ? "\u2713 Selected" : "Select"}
+            &#10003; Yes
+          </button>
+          <button
+            onClick={() => onSetStatus("no")}
+            className={`flex-1 rounded-lg min-h-[36px] text-sm font-medium transition-all duration-200 ${
+              talent.clientStatus === "no"
+                ? "bg-red-500/10 text-red-400 hover:bg-red-500/20"
+                : "bg-[#1A1C22] text-[#8B8D93] hover:bg-[#262930]"
+            }`}
+          >
+            &#10007; No
+          </button>
+          <button
+            onClick={() => onSetStatus("maybe")}
+            className={`flex-1 rounded-lg min-h-[36px] text-sm font-medium transition-all duration-200 ${
+              talent.clientStatus === "maybe"
+                ? "bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"
+                : "bg-[#1A1C22] text-[#8B8D93] hover:bg-[#262930]"
+            }`}
+          >
+            ? Maybe
           </button>
           <button
             onClick={onStartComment}
-            className="rounded-lg bg-[#1E2128] min-h-[44px] sm:min-h-[36px] min-w-[44px] sm:min-w-[36px] flex items-center justify-center text-sm text-[#E8E3D8] hover:bg-[#262930] transition"
+            className="rounded-lg bg-[#1A1C22] min-h-[36px] min-w-[36px] flex items-center justify-center text-sm text-[#8B8D93] hover:bg-[#262930] hover:text-[#E8E3D8] transition"
             title="Comment"
           >
             <MessageSquare size={14} />
@@ -443,12 +510,29 @@ function TalentCard({
           {!talent.isHiddenByClient && (
             <button
               onClick={onHide}
-              className="rounded-lg bg-[#1E2128] min-h-[44px] sm:min-h-[36px] min-w-[44px] sm:min-w-[36px] flex items-center justify-center text-sm text-[#E8E3D8] hover:bg-red-900/20 hover:text-red-400 transition"
+              className="rounded-lg bg-[#1A1C22] min-h-[36px] min-w-[36px] flex items-center justify-center text-sm text-[#8B8D93] hover:bg-red-900/20 hover:text-red-400 transition"
               title="Hide"
             >
               <EyeOff size={14} />
             </button>
           )}
+        </div>
+
+        {/* Rating row */}
+        <div className="flex items-center gap-1.5 mt-2">
+          {[1, 2, 3, 4, 5, 6].map((num) => (
+            <button
+              key={num}
+              onClick={() => onSetRating(num)}
+              className={`w-8 h-8 rounded-full text-xs font-semibold transition-all duration-200 ${
+                talent.clientRating === num
+                  ? "bg-[#B8964C] text-[#0F0F12]"
+                  : "bg-[#1A1C22] text-[#8B8D93] hover:bg-[#262930]"
+              }`}
+            >
+              {num}
+            </button>
+          ))}
         </div>
       </div>
     </div>
@@ -470,8 +554,8 @@ function InitialsAvatar({ name, size = 40 }: { name: string; size?: number }) {
         width: size,
         height: size,
         fontSize: size * 0.35,
-        background: "linear-gradient(135deg, #C9A84C, #8B6D1A)",
-        color: "#0D0F14",
+        background: "linear-gradient(135deg, #B8964C, #8B6D1A)",
+        color: "#0F0F12",
       }}
     >
       {initials}

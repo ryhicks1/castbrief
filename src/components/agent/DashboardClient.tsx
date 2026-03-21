@@ -10,6 +10,8 @@ interface PackageTalent {
   talent_id: string;
   client_pick: boolean;
   client_comment: string | null;
+  client_status: string | null;
+  client_rating: number | null;
   media_requested: boolean;
   upload_status: string;
   talents: { full_name: string; photo_url: string | null };
@@ -110,7 +112,7 @@ export default function DashboardClient({
           const isExpanded = expanded.has(pkg.id);
           const talentCount = pkg.package_talents.length;
           const pickCount = pkg.package_talents.filter(
-            (pt) => pt.client_pick
+            (pt) => pt.client_status === "yes"
           ).length;
           const commentCount = pkg.package_talents.filter(
             (pt) => pt.client_comment
@@ -119,7 +121,7 @@ export default function DashboardClient({
           return (
             <div
               key={pkg.id}
-              className="rounded-xl border border-[#1E2128] bg-[#161920] overflow-hidden"
+              className="rounded-xl bg-[#13151A] shadow-lg shadow-black/20 overflow-hidden"
             >
               {/* Collapsed row */}
               <button
@@ -131,7 +133,7 @@ export default function DashboardClient({
                     <Link
                       href={`/agent/packages/${pkg.id}`}
                       onClick={(e) => e.stopPropagation()}
-                      className="font-medium text-[#E8E3D8] truncate hover:text-[#C9A84C] transition-colors"
+                      className="font-medium text-[#E8E3D8] truncate hover:text-[#B8964C] transition-colors"
                     >
                       {pkg.name}
                     </Link>
@@ -148,7 +150,7 @@ export default function DashboardClient({
                 </div>
                 <ChevronRight
                   size={16}
-                  className={`text-[#8B8D93] transition-transform duration-200 ${
+                  className={`text-[#8B8D93] transition-transform duration-300 ${
                     isExpanded ? "rotate-90" : ""
                   }`}
                 />
@@ -203,7 +205,7 @@ export default function DashboardClient({
                                     body: JSON.stringify({ packageTalentId: pt.id }),
                                   });
                                 }}
-                                className="text-[10px] text-[#C9A84C] hover:underline"
+                                className="text-[10px] text-[#B8964C] hover:underline"
                               >
                                 Send Reminder
                               </button>
@@ -224,7 +226,7 @@ export default function DashboardClient({
                             Client Package Link
                           </div>
                           <div className="flex items-center gap-2 mt-1">
-                            <span className="text-sm text-[#C9A84C] truncate">
+                            <span className="text-sm text-[#B8964C] truncate">
                               /p/{pkg.token}
                             </span>
                             <button
@@ -282,7 +284,7 @@ export default function DashboardClient({
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl border border-[#1E2128] bg-[#161920] p-4 shadow-md shadow-black/10 hover:border-[#2A2D35] transition-all duration-200">
+    <div className="rounded-xl bg-[#13151A] p-4 shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/30 transition-all duration-300">
       <div className="text-2xl font-bold text-[#E8E3D8]">{value}</div>
       <div className="text-xs text-[#8B8D93] mt-1">{label}</div>
     </div>

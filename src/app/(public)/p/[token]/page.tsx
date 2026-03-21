@@ -32,6 +32,8 @@ export default async function PublicPackagePage({
         sort_order,
         client_pick,
         client_comment,
+        client_status,
+        client_rating,
         is_hidden_by_client,
         media_requested,
         upload_status,
@@ -85,7 +87,7 @@ export default async function PublicPackagePage({
     <div className="min-h-screen bg-[#0D0F14]">
       <div className="max-w-5xl mx-auto px-4 pt-4 sm:px-6">
         <Link href="/" className="text-xs font-semibold text-[#C9A84C] hover:text-[#D4B35C] transition-colors">
-          CastBrief
+          CastingBrief
         </Link>
       </div>
       <PackageView
@@ -102,6 +104,8 @@ export default async function PublicPackagePage({
             packageTalentId: pt.id,
             talentId: pt.talent_id,
             clientPick: pt.client_pick ?? false,
+            clientStatus: pt.client_status ?? null,
+            clientRating: pt.client_rating ?? null,
             clientComment: pt.client_comment,
             isHiddenByClient: pt.is_hidden_by_client ?? false,
             mediaRequested: pt.media_requested ?? false,

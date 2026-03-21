@@ -67,7 +67,7 @@ export async function POST(
 
       if (dropboxToken) {
         try {
-          const folderPath = `/CastBrief/${pkg.name}/${talent.full_name}`;
+          const folderPath = `/CastingBrief/${pkg.name}/${talent.full_name}`;
           await createFolder(dropboxToken, folderPath);
           const fileReq = await createFileRequest(
             dropboxToken,
@@ -103,7 +103,7 @@ export async function POST(
       try {
         const folderUrl = await getSharedFolderLink(
           dropboxToken,
-          `/CastBrief/${pkg.name}`
+          `/CastingBrief/${pkg.name}`
         );
         await supabase
           .from("packages")
