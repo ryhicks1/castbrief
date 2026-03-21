@@ -22,9 +22,20 @@ export default async function NewPackagePage() {
     .eq("agent_id", user.id)
     .order("label");
 
+  // Normalize Supabase joined arrays (chips inside talent_chips)
+  const normalizedTalents = (talents ?? []).map((t) => ({
+    ...t,
+    talent_chips: t.talent_chips.map(
+      (tc: { chip_id: string; chips: { id: string; label: string; color: string } | { id: string; label: string; color: string }[] }) => ({
+        ...tc,
+        chips: Array.isArray(tc.chips) ? tc.chips[0] : tc.chips,
+      })
+    ),
+  }));
+
   return (
     <PackageBuilder
-      talents={talents ?? []}
+      talents={normalizedTalents as Parameters<typeof PackageBuilder>[0]["talents"]}
       chips={chips ?? []}
       agentId={user.id}
     />

@@ -3,7 +3,20 @@
     "allow": [
       "Bash(npm install -g @anthropic-ai/claude-code)",
       "Bash(claude --chrome)",
-      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm --yes)"
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm --yes)",
+      "Bash(npm install @supabase/supabase-js @supabase/ssr @supabase/auth-helpers-nextjs resend react-email)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(npm install dropbox)",
+      "Bash(npm install:*)",
+      "Bash(ls /Users/ryanhicks/castbrief/src/app/\\\\\\(client\\\\\\)/)",
+      "Bash(git remote:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh auth:*)",
+      "Bash(gh api:*)",
+      "Bash(npx vercel:*)",
+      "Bash(npx next:*)"
     ]
   }
 }
