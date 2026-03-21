@@ -266,7 +266,7 @@ export default function TalentForm({
             {photoPreview ? "Change Photo" : "Upload Photo"}
           </Button>
           <p className="text-xs text-[#8B8D93] mt-1">
-            JPG, PNG or WebP. Max 5MB.
+            JPG, PNG or WebP. Max 25MB.
           </p>
         </div>
       </div>

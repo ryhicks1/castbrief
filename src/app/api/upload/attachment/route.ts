@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     if (!bucketExists) {
       await supabase.storage.createBucket("media-attachments", {
         public: true,
-        fileSizeLimit: 10 * 1024 * 1024, // 10MB
+        fileSizeLimit: 25 * 1024 * 1024, // 25MB
       });
     }
 
