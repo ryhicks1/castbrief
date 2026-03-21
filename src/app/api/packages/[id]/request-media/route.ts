@@ -17,7 +17,7 @@ export async function POST(
   try {
     const { id: packageId } = await params;
     const body = await request.json();
-    const { token, clientName } = body;
+    const { token, clientName, message, link, attachmentUrl } = body;
 
     if (!token) {
       return NextResponse.json({ error: "Token required" }, { status: 401 });
@@ -135,10 +135,15 @@ export async function POST(
       }
     }
 
-    // Update package status
+    // Store media request details on the package
     await supabase
       .from("packages")
-      .update({ status: "media_requested" })
+      .update({
+        status: "media_requested",
+        media_request_message: message || null,
+        media_request_link: link || null,
+        media_request_attachment_url: attachmentUrl || null,
+      })
       .eq("id", packageId);
 
     return NextResponse.json({ success: true, uploadUrls });

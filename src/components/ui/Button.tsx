@@ -4,7 +4,7 @@ import { forwardRef } from "react";
 
 const variants = {
   primary:
-    "bg-gradient-to-r from-[#C9A84C] to-[#B8943F] text-[#0D0F14] hover:from-[#D4B35C] hover:to-[#C9A84C] font-semibold",
+    "bg-gradient-to-r from-[#C9A84C] to-[#B8943F] text-[#0D0F14] hover:from-[#D4B35C] hover:to-[#C9A84C] hover:shadow-lg hover:shadow-[#C9A84C]/10 font-semibold",
   secondary:
     "bg-[#1E2128] text-[#E8E3D8] border border-[#2A2D35] hover:bg-[#262930]",
   ghost: "text-[#E8E3D8] hover:bg-[#1E2128]",
@@ -40,7 +40,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         disabled={disabled || loading}
-        className={`inline-flex items-center justify-center rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-[#C9A84C]/50 disabled:opacity-50 disabled:cursor-not-allowed ${variants[variant]} ${sizes[size]} ${className}`}
+        className={`inline-flex items-center justify-center rounded-lg transition-all duration-200 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[#C9A84C]/50 disabled:opacity-50 disabled:cursor-not-allowed ${variants[variant]} ${sizes[size]} ${className}`}
         {...props}
       >
         {loading && (

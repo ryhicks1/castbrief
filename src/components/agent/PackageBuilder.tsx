@@ -237,7 +237,7 @@ export default function PackageBuilder({
   }
 
   return (
-    <div className="flex gap-6 h-[calc(100vh-7rem)]">
+    <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 h-[calc(100vh-7rem)]">
       {/* LEFT — Talent Selector */}
       <div className="flex-1 flex flex-col min-w-0">
         <div className="flex items-center justify-between mb-4">
@@ -283,7 +283,7 @@ export default function PackageBuilder({
             {filtered.map((talent) => (
               <label
                 key={talent.id}
-                className={`relative rounded-xl overflow-hidden cursor-pointer transition ${
+                className={`relative rounded-xl overflow-hidden cursor-pointer shadow-md shadow-black/10 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/20 transition-all duration-200 ${
                   selected.has(talent.id)
                     ? "ring-2 ring-[#C9A84C] shadow-[0_0_12px_rgba(201,168,76,0.1)]"
                     : "ring-1 ring-[#1E2128] hover:ring-[#2A2D35]"
@@ -301,7 +301,7 @@ export default function PackageBuilder({
                   {/* Checkbox overlay on top-right corner */}
                   <div className="absolute top-2 right-2 z-10">
                     <div
-                      className="flex items-center justify-center w-5 h-5 rounded border-2 transition-colors"
+                      className="flex items-center justify-center w-8 h-8 md:w-6 md:h-6 rounded border-2 transition-colors"
                       style={{
                         borderColor: selected.has(talent.id) ? "#C9A84C" : "#8B8D93",
                         backgroundColor: selected.has(talent.id) ? "#C9A84C" : "rgba(13,15,20,0.6)",
@@ -352,7 +352,7 @@ export default function PackageBuilder({
       </div>
 
       {/* RIGHT — Package Config */}
-      <div className="w-80 shrink-0 overflow-y-auto">
+      <div className="w-full lg:w-80 lg:shrink-0 order-first lg:order-none overflow-y-auto">
         <div className="sticky top-0 rounded-xl border border-[#1E2128] bg-[#161920] p-5 space-y-4">
           <div className="text-xs font-semibold uppercase tracking-wider text-[#C9A84C]">
             Package Settings

@@ -25,7 +25,7 @@ export default function Chip({
     <span
       onClick={onClick}
       style={style}
-      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium transition-all duration-150 hover:scale-105 ${
         active ? "" : "border bg-transparent"
       } ${onClick ? "cursor-pointer hover:opacity-80" : ""} ${className}`}
     >

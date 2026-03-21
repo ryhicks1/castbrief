@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Button, Avatar, Badge } from "@/components/ui";
+import { ChevronRight, PackagePlus } from "lucide-react";
 
 interface PackageTalent {
   id: string;
@@ -71,7 +72,9 @@ export default function DashboardClient({
   if (packages.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24">
-        <div className="text-5xl mb-4">▤</div>
+        <div className="text-5xl mb-4">
+          <PackagePlus size={48} className="text-[#8B8D93]" />
+        </div>
         <h2 className="text-xl font-semibold text-[#E8E3D8] mb-2">
           No packages yet
         </h2>
@@ -95,7 +98,7 @@ export default function DashboardClient({
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <StatCard label="Active Packages" value={stats.activePackages} />
         <StatCard label="Pending Media" value={stats.pendingMedia} />
         <StatCard label="Uploads Received" value={stats.uploadsReceived} />
@@ -125,9 +128,13 @@ export default function DashboardClient({
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-[#E8E3D8] truncate">
+                    <Link
+                      href={`/agent/packages/${pkg.id}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="font-medium text-[#E8E3D8] truncate hover:text-[#C9A84C] transition-colors"
+                    >
                       {pkg.name}
-                    </span>
+                    </Link>
                     <Badge
                       label={statusLabels[pkg.status] || pkg.status}
                       color={statusColors[pkg.status] || "muted"}
@@ -139,20 +146,19 @@ export default function DashboardClient({
                     {new Date(pkg.created_at).toLocaleDateString()}
                   </div>
                 </div>
-                <span
-                  className={`text-[#8B8D93] transition-transform ${
+                <ChevronRight
+                  size={16}
+                  className={`text-[#8B8D93] transition-transform duration-200 ${
                     isExpanded ? "rotate-90" : ""
                   }`}
-                >
-                  ▸
-                </span>
+                />
               </button>
 
               {/* Expanded */}
               {isExpanded && (
                 <div className="border-t border-[#1E2128] px-4 py-4">
                   <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                    {/* Left — Talent status */}
+                    {/* Left -- Talent status */}
                     <div>
                       <div className="text-xs font-semibold uppercase tracking-wider text-[#8B8D93] mb-3">
                         Talent Status
@@ -207,7 +213,7 @@ export default function DashboardClient({
                       </div>
                     </div>
 
-                    {/* Right — Links & activity */}
+                    {/* Right -- Links & activity */}
                     <div>
                       <div className="text-xs font-semibold uppercase tracking-wider text-[#8B8D93] mb-3">
                         Links & Activity
@@ -276,7 +282,7 @@ export default function DashboardClient({
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl border border-[#1E2128] bg-[#161920] p-4">
+    <div className="rounded-xl border border-[#1E2128] bg-[#161920] p-4 shadow-md shadow-black/10 hover:border-[#2A2D35] transition-all duration-200">
       <div className="text-2xl font-bold text-[#E8E3D8]">{value}</div>
       <div className="text-xs text-[#8B8D93] mt-1">{label}</div>
     </div>

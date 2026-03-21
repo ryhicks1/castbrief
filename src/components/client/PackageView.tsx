@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { MessageSquare, EyeOff } from "lucide-react";
 
 interface TalentChip {
   id: string;
@@ -208,8 +209,8 @@ export default function PackageView({
 
       {/* Media request modal */}
       {showMediaModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-md rounded-xl bg-[#161920] border border-[#1E2128] p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-[calc(100vw-2rem)] sm:max-w-md rounded-xl bg-[#161920] border border-[#1E2128] p-6 shadow-2xl shadow-black/40 animate-[modal-enter_0.2s_ease-out]">
             <h2 className="text-lg font-semibold text-[#E8E3D8] mb-4">
               Request Media
             </h2>
@@ -275,13 +276,13 @@ function TalentCard({
 
   return (
     <div
-      className={`rounded-xl overflow-hidden transition-all ${
+      className={`rounded-xl overflow-hidden shadow-md shadow-black/10 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/20 transition-all duration-200 ${
         talent.clientPick
           ? "border-2 border-[#C9A84C] shadow-[0_0_20px_rgba(201,168,76,0.15)]"
           : "border border-[#1E2128]"
       } ${talent.isHiddenByClient ? "opacity-50" : ""} bg-[#161920]`}
     >
-      {/* Photo area — 4:5 aspect ratio headshot */}
+      {/* Photo area -- 4:5 aspect ratio headshot */}
       <div className="relative" style={{ aspectRatio: "4/5" }}>
         {talent.photo_url ? (
           <img
@@ -331,7 +332,7 @@ function TalentCard({
 
       {/* Card body */}
       <div className="p-3">
-        {/* Compact metadata line: age · location · background · height */}
+        {/* Compact metadata line: age . location . background . height */}
         <div className="text-xs text-[#8B8D93] truncate mb-2">
           {[
             talent.age ? `${talent.age}` : null,
@@ -344,7 +345,7 @@ function TalentCard({
             .join(" \u00B7 ")}
         </div>
 
-        {/* Chips — max 3 */}
+        {/* Chips -- max 3 */}
         {talent.chips.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-2">
             {talent.chips.slice(0, 3).map((chip) => (
@@ -386,8 +387,9 @@ function TalentCard({
 
         {/* Existing comment */}
         {talent.clientComment && !isCommenting && (
-          <div className="mb-3 rounded-lg bg-[#0D0F14] px-3 py-2 text-xs text-[#8B8D93]">
-            &#128172; {talent.clientComment}
+          <div className="mb-3 rounded-lg bg-[#0D0F14] px-3 py-2 text-xs text-[#8B8D93] flex items-start gap-1.5">
+            <MessageSquare size={14} className="shrink-0 mt-0.5" />
+            <span>{talent.clientComment}</span>
           </div>
         )}
 
@@ -419,11 +421,11 @@ function TalentCard({
           </div>
         )}
 
-        {/* Actions — compact row */}
+        {/* Actions -- compact row */}
         <div className="flex items-center gap-1.5 pt-2 border-t border-[#1E2128]">
           <button
             onClick={onTogglePick}
-            className={`flex-1 rounded-lg px-3 min-h-[36px] text-sm font-medium transition ${
+            className={`flex-1 rounded-lg px-3 min-h-[44px] sm:min-h-[36px] text-sm font-medium transition ${
               talent.clientPick
                 ? "bg-[#C9A84C] text-[#0D0F14]"
                 : "bg-[#1E2128] text-[#E8E3D8] hover:bg-[#262930]"
@@ -433,18 +435,18 @@ function TalentCard({
           </button>
           <button
             onClick={onStartComment}
-            className="rounded-lg bg-[#1E2128] min-h-[36px] min-w-[36px] flex items-center justify-center text-sm text-[#E8E3D8] hover:bg-[#262930] transition"
+            className="rounded-lg bg-[#1E2128] min-h-[44px] sm:min-h-[36px] min-w-[44px] sm:min-w-[36px] flex items-center justify-center text-sm text-[#E8E3D8] hover:bg-[#262930] transition"
             title="Comment"
           >
-            &#128172;
+            <MessageSquare size={14} />
           </button>
           {!talent.isHiddenByClient && (
             <button
               onClick={onHide}
-              className="rounded-lg bg-[#1E2128] min-h-[36px] min-w-[36px] flex items-center justify-center text-sm text-[#E8E3D8] hover:bg-red-900/20 hover:text-red-400 transition"
+              className="rounded-lg bg-[#1E2128] min-h-[44px] sm:min-h-[36px] min-w-[44px] sm:min-w-[36px] flex items-center justify-center text-sm text-[#E8E3D8] hover:bg-red-900/20 hover:text-red-400 transition"
               title="Hide"
             >
-              &#128683;
+              <EyeOff size={14} />
             </button>
           )}
         </div>

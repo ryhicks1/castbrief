@@ -3,6 +3,8 @@ interface UploadPromptEmailProps {
   packageName: string;
   talentName: string;
   uploadToken: string;
+  message?: string;
+  link?: string;
 }
 
 export function renderUploadPromptEmail({
@@ -10,6 +12,8 @@ export function renderUploadPromptEmail({
   packageName,
   talentName,
   uploadToken,
+  message,
+  link,
 }: UploadPromptEmailProps): { subject: string; html: string } {
   const url = `${process.env.NEXT_PUBLIC_APP_URL || "https://castbrief.com"}/upload/${uploadToken}`;
   const subject = `You've been requested to submit materials for ${packageName}`;
@@ -29,6 +33,14 @@ export function renderUploadPromptEmail({
           <p style="color:#8B8D93;font-size:13px;margin:0 0 8px;">UPLOAD REQUEST</p>
           <h1 style="color:#E8E3D8;font-size:20px;margin:0 0 12px;font-weight:600;">Hi ${talentName},</h1>
           <p style="color:#8B8D93;font-size:14px;margin:0 0 24px;">Your agent ${agentName} has requested you upload your self-tape or materials for <strong style="color:#E8E3D8;">${packageName}</strong>.</p>
+          ${message ? `<div style="margin:0 0 20px;padding:16px;background-color:#0D0F14;border-radius:8px;border:1px solid #1E2128;">
+            <p style="color:#8B8D93;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 8px;font-weight:600;">Message from your agent</p>
+            <p style="color:#E8E3D8;font-size:14px;margin:0;white-space:pre-wrap;">${message}</p>
+          </div>` : ""}
+          ${link ? `<div style="margin:0 0 20px;">
+            <p style="color:#8B8D93;font-size:12px;margin:0 0 4px;">Reference:</p>
+            <a href="${link}" style="color:#C9A84C;font-size:14px;text-decoration:underline;">${link}</a>
+          </div>` : ""}
           <a href="${url}" style="display:inline-block;background:linear-gradient(135deg,#C9A84C,#B8943F);color:#0D0F14;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:15px;">
             Upload Your Materials
           </a>

@@ -165,7 +165,7 @@ export default function RosterClient({
         {filtered.map((talent) => (
           <div
             key={talent.id}
-            className={`relative rounded-xl overflow-hidden border transition hover:border-[#2A2D35] bg-[#161920] ${
+            className={`relative rounded-xl overflow-hidden border shadow-md shadow-black/10 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/20 transition-all duration-200 hover:border-[#2A2D35] bg-[#161920] ${
               selected.has(talent.id)
                 ? "border-[#C9A84C] shadow-[0_0_16px_rgba(201,168,76,0.12)]"
                 : "border-[#1E2128]"
