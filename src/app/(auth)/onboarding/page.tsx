@@ -67,13 +67,13 @@ export default function OnboardingPage() {
       return;
     }
 
-    const { error: insertError } = await supabase.from("profiles").insert({
+    const { error: insertError } = await supabase.from("profiles").upsert({
       id: user.id,
       role,
       full_name: fullName,
       email: user.email,
       agency_name: role === "agent" ? agencyName : null,
-    });
+    }, { onConflict: "id" });
 
     if (insertError) {
       setError(insertError.message);
@@ -89,22 +89,35 @@ export default function OnboardingPage() {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "");
 
-      const { data: orgData, error: orgError } = await supabase
+      // Try to find existing org first, create if not exists
+      let orgId: string;
+      const { data: existingOrg } = await supabase
         .from("organizations")
-        .insert({ name: agencyName.trim(), slug })
         .select("id")
+        .eq("slug", slug)
         .single();
 
-      if (orgError) {
-        setError(orgError.message);
-        setLoading(false);
-        return;
+      if (existingOrg) {
+        orgId = existingOrg.id;
+      } else {
+        const { data: orgData, error: orgError } = await supabase
+          .from("organizations")
+          .insert({ name: agencyName.trim(), slug })
+          .select("id")
+          .single();
+
+        if (orgError) {
+          setError(orgError.message);
+          setLoading(false);
+          return;
+        }
+        orgId = orgData.id;
       }
 
-      if (orgData) {
+      if (orgId) {
         const { error: memberError } = await supabase
           .from("org_members")
-          .insert({ org_id: orgData.id, user_id: user.id, role: "admin" });
+          .upsert({ org_id: orgId, user_id: user.id, role: "admin" }, { onConflict: "org_id,user_id" });
 
         if (memberError) {
           setError(memberError.message);
