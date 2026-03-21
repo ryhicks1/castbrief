@@ -1,16 +1,19 @@
 "use client";
 
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
-export default function SignupPage() {
+function SignupForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const inviteToken = searchParams.get("invite");
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -29,7 +32,10 @@ export default function SignupPage() {
       return;
     }
 
-    router.push("/onboarding");
+    const dest = inviteToken
+      ? `/onboarding?invite=${inviteToken}`
+      : "/onboarding";
+    router.push(dest);
     router.refresh();
   }
 
@@ -93,5 +99,19 @@ export default function SignupPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-12">
+          <p className="text-[#8B8D93]">Loading...</p>
+        </div>
+      }
+    >
+      <SignupForm />
+    </Suspense>
   );
 }

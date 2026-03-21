@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function OnboardingPage() {
-  const [role, setRole] = useState<"agent" | "client" | null>(null);
+  const [role, setRole] = useState<"agent" | "client" | "talent" | null>(null);
   const [fullName, setFullName] = useState("");
   const [agencyName, setAgencyName] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +32,13 @@ export default function OnboardingPage() {
         .single();
 
       if (profile) {
-        router.push(profile.role === "agent" ? "/agent/dashboard" : "/client/projects");
+        const dest =
+          profile.role === "agent"
+            ? "/agent/dashboard"
+            : profile.role === "talent"
+              ? "/talent/profile"
+              : "/client/projects";
+        router.push(dest);
         return;
       }
 
@@ -75,7 +81,21 @@ export default function OnboardingPage() {
       return;
     }
 
-    router.push(role === "agent" ? "/agent/dashboard" : "/client/projects");
+    // Check for pending invite token
+    const params = new URLSearchParams(window.location.search);
+    const inviteToken = params.get("invite");
+
+    if (inviteToken) {
+      router.push(`/join/${inviteToken}`);
+    } else {
+      const dest =
+        role === "agent"
+          ? "/agent/dashboard"
+          : role === "talent"
+            ? "/talent/profile"
+            : "/client/projects";
+      router.push(dest);
+    }
     router.refresh();
   }
 
@@ -107,7 +127,7 @@ export default function OnboardingPage() {
               <label className="mb-2 block text-sm text-[#8B8D93]">
                 I am a...
               </label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <button
                   type="button"
                   onClick={() => setRole("agent")}
@@ -134,6 +154,20 @@ export default function OnboardingPage() {
                   <div className="text-base font-semibold">I&apos;m a Client</div>
                   <div className="mt-1 text-xs text-[#8B8D93]">
                     Casting Director / Client
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole("talent")}
+                  className={`rounded-lg border-2 p-4 text-center transition min-h-[44px] ${
+                    role === "talent"
+                      ? "border-[#C9A84C] bg-[#C9A84C]/10 text-[#C9A84C]"
+                      : "border-[#2A2D35] text-[#E8E3D8] hover:border-[#3A3D45]"
+                  }`}
+                >
+                  <div className="text-base font-semibold">I&apos;m Talent</div>
+                  <div className="mt-1 text-xs text-[#8B8D93]">
+                    Actor / Performer
                   </div>
                 </button>
               </div>

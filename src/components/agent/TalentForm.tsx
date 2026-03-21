@@ -23,6 +23,9 @@ interface TalentData {
   special_skills: string[];
   photo_url: string | null;
   links: Record<string, string>;
+  email: string | null;
+  phone: string | null;
+  editing_locked: boolean;
   talent_chips?: { chip_id: string; chips: ChipData }[];
 }
 
@@ -30,6 +33,7 @@ interface TalentFormProps {
   talent?: TalentData;
   chips: ChipData[];
   agentId: string;
+  isLocked?: boolean;
 }
 
 const linkFields = [
@@ -47,6 +51,7 @@ export default function TalentForm({
   talent,
   chips: initialChips,
   agentId,
+  isLocked = false,
 }: TalentFormProps) {
   const router = useRouter();
   const supabase = createClient();
@@ -64,6 +69,9 @@ export default function TalentForm({
     special_skills: talent?.special_skills ?? [],
     photo_url: talent?.photo_url ?? null,
     links: talent?.links ?? {},
+    email: talent?.email ?? "",
+    phone: talent?.phone ?? "",
+    editing_locked: talent?.editing_locked ?? false,
   });
 
   const [selectedChips, setSelectedChips] = useState<Set<string>>(
@@ -144,6 +152,10 @@ export default function TalentForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (formDisabled) {
+      setError("Profile editing is locked");
+      return;
+    }
     if (!form.full_name.trim()) {
       setError("Full name is required");
       return;
@@ -185,6 +197,9 @@ export default function TalentForm({
       special_skills: form.special_skills,
       photo_url: photoUrl,
       links: form.links,
+      email: form.email || null,
+      phone: form.phone || null,
+      editing_locked: form.editing_locked,
       updated_at: new Date().toISOString(),
     };
 
@@ -236,11 +251,33 @@ export default function TalentForm({
     router.refresh();
   }
 
+  const formDisabled = isLocked;
+
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
       <h1 className="text-xl font-bold text-[#E8E3D8]">
         {isEditing ? "Edit Talent" : "Add Talent"}
       </h1>
+
+      {/* Lock profile editing toggle — only shown when editing existing talent, agent view */}
+      {isEditing && !isLocked && (
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={form.editing_locked}
+            onChange={(e) => updateField("editing_locked", e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-[#2A2D35] bg-[#1E2128] text-[#C9A84C] focus:ring-[#C9A84C]"
+          />
+          <div>
+            <span className="text-sm font-medium text-[#E8E3D8]">
+              Lock profile editing
+            </span>
+            <p className="text-xs text-[#8B8D93]">
+              When locked, talent cannot make changes to their profile
+            </p>
+          </div>
+        </label>
+      )}
 
       {/* Photo */}
       <div className="flex items-center gap-4">
@@ -324,6 +361,22 @@ export default function TalentForm({
               e.target.value ? Number(e.target.value) : null
             )
           }
+          disabled={formDisabled}
+        />
+        <Input
+          id="email"
+          label="Email"
+          type="email"
+          value={form.email}
+          onChange={(e) => updateField("email", e.target.value)}
+          disabled={formDisabled}
+        />
+        <Input
+          id="phone"
+          label="Phone"
+          value={form.phone}
+          onChange={(e) => updateField("phone", e.target.value)}
+          disabled={formDisabled}
         />
       </div>
 

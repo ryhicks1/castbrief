@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
-import { Button, Chip } from "@/components/ui";
+import { Button, Chip, Input } from "@/components/ui";
 import { TalentPhoto } from "@/components/ui/Avatar";
 
 interface TalentChip {
@@ -89,6 +89,60 @@ export default function RosterClient({
     });
   }
 
+  // Invite modal state
+  const [showInvite, setShowInvite] = useState(false);
+  const [inviteName, setInviteName] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteCopied, setInviteCopied] = useState(false);
+
+  const generateInvite = useCallback(async () => {
+    setInviteLoading(true);
+    setInviteError(null);
+    setInviteUrl(null);
+
+    try {
+      const res = await fetch("/api/roster/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          talentName: inviteName || undefined,
+          email: inviteEmail || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setInviteError(data.error || "Failed to generate invite");
+        return;
+      }
+
+      setInviteUrl(data.url);
+    } catch {
+      setInviteError("Failed to generate invite");
+    } finally {
+      setInviteLoading(false);
+    }
+  }, [inviteName, inviteEmail]);
+
+  function copyInviteUrl() {
+    if (!inviteUrl) return;
+    navigator.clipboard.writeText(inviteUrl);
+    setInviteCopied(true);
+    setTimeout(() => setInviteCopied(false), 2000);
+  }
+
+  function resetInvite() {
+    setShowInvite(false);
+    setInviteName("");
+    setInviteEmail("");
+    setInviteUrl(null);
+    setInviteError(null);
+    setInviteCopied(false);
+  }
+
   if (totalCount === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24">
@@ -128,6 +182,71 @@ export default function RosterClient({
               </Button>
             </Link>
           )}
+          <div className="relative">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setShowInvite(!showInvite)}
+            >
+              Invite Talent
+            </Button>
+
+            {/* Invite modal/dropdown */}
+            {showInvite && (
+              <div className="absolute right-0 top-full mt-2 z-50 w-80 rounded-xl border border-[#2A2D35] bg-[#161920] p-4 shadow-xl shadow-black/30">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-[#E8E3D8]">
+                    Invite Talent
+                  </h3>
+                  <button
+                    onClick={resetInvite}
+                    className="text-[#8B8D93] hover:text-[#E8E3D8] text-lg leading-none"
+                  >
+                    &times;
+                  </button>
+                </div>
+
+                {!inviteUrl ? (
+                  <div className="space-y-3">
+                    <Input
+                      id="invite-name"
+                      label="Talent Name (optional)"
+                      value={inviteName}
+                      onChange={(e) => setInviteName(e.target.value)}
+                    />
+                    <Input
+                      id="invite-email"
+                      label="Email (optional)"
+                      type="email"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                    />
+                    {inviteError && (
+                      <p className="text-xs text-red-400">{inviteError}</p>
+                    )}
+                    <Button
+                      size="sm"
+                      onClick={generateInvite}
+                      loading={inviteLoading}
+                    >
+                      Generate Invite Link
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="rounded-lg bg-[#0D0F14] p-2 border border-[#2A2D35]">
+                      <p className="text-xs text-[#E8E3D8] break-all select-all">
+                        {inviteUrl}
+                      </p>
+                    </div>
+                    <Button size="sm" onClick={copyInviteUrl}>
+                      {inviteCopied ? "Copied!" : "Copy Link"}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
           <Link href="/agent/roster/new">
             <Button size="sm">+ Add Talent</Button>
           </Link>
