@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { getCurrentOrg, getOrgDivisions } from "@/lib/supabase/org";
+import { ensureOrg, orgFilter, getOrgDivisions } from "@/lib/supabase/org";
 import SettingsClient from "@/components/agent/SettingsClient";
 
 export default async function SettingsPage() {
@@ -11,8 +11,7 @@ export default async function SettingsPage() {
 
   if (!user) redirect("/login");
 
-  const orgMembership = await getCurrentOrg(supabase, user.id);
-  if (!orgMembership) redirect("/onboarding");
+  const orgMembership = (await ensureOrg(supabase, user.id))!;
   if (orgMembership.role !== "admin") redirect("/agent/dashboard");
 
   const divisions = await getOrgDivisions(supabase, orgMembership.orgId);
@@ -20,7 +19,7 @@ export default async function SettingsPage() {
   const { data: members } = await supabase
     .from("org_members")
     .select("id, user_id, role, profiles:user_id(full_name, email)")
-    .eq("org_id", orgMembership.orgId)
+    .eq(orgFilter(orgMembership.orgId, user.id).column, orgFilter(orgMembership.orgId, user.id).value)
     .order("role");
 
   const normalizedMembers = (members ?? []).map((m: any) => {

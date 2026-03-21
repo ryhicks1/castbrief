@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import TalentForm from "@/components/agent/TalentForm";
-import { getCurrentOrg } from "@/lib/supabase/org";
+import { ensureOrg, orgFilter } from "@/lib/supabase/org";
 
 export default async function NewTalentPage() {
   const supabase = await createClient();
@@ -11,13 +11,12 @@ export default async function NewTalentPage() {
 
   if (!user) redirect("/login");
 
-  const orgMembership = await getCurrentOrg(supabase, user.id);
-  if (!orgMembership) redirect("/onboarding");
+  const orgMembership = (await ensureOrg(supabase, user.id))!;
 
   const { data: chips } = await supabase
     .from("chips")
     .select("*")
-    .eq("org_id", orgMembership.orgId)
+    .eq(orgFilter(orgMembership.orgId, user.id).column, orgFilter(orgMembership.orgId, user.id).value)
     .order("label");
 
   return <TalentForm chips={chips ?? []} agentId={user.id} orgId={orgMembership.orgId} />;

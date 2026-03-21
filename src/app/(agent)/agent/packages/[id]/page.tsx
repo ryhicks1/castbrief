@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import PackageReviewClient from "@/components/agent/PackageReviewClient";
-import { getCurrentOrg } from "@/lib/supabase/org";
+import { ensureOrg, orgFilter } from "@/lib/supabase/org";
 
 export default async function PackageReviewPage({
   params,
@@ -16,8 +16,7 @@ export default async function PackageReviewPage({
 
   if (!user) redirect("/login");
 
-  const orgMembership = await getCurrentOrg(supabase, user.id);
-  if (!orgMembership) redirect("/onboarding");
+  const orgMembership = (await ensureOrg(supabase, user.id))!;
 
   const { data: pkg } = await supabase
     .from("packages")
@@ -37,7 +36,7 @@ export default async function PackageReviewPage({
        )`
     )
     .eq("id", id)
-    .eq("org_id", orgMembership.orgId)
+    .eq(orgFilter(orgMembership.orgId, user.id).column, orgFilter(orgMembership.orgId, user.id).value)
     .single();
 
   if (!pkg) redirect("/agent/dashboard");

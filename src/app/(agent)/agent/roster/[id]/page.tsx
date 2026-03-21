@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import TalentForm from "@/components/agent/TalentForm";
 import TalentNotes from "@/components/agent/TalentNotes";
-import { getCurrentOrg } from "@/lib/supabase/org";
+import { ensureOrg, orgFilter } from "@/lib/supabase/org";
 
 export default async function TalentProfilePage({
   params,
@@ -17,14 +17,13 @@ export default async function TalentProfilePage({
 
   if (!user) redirect("/login");
 
-  const orgMembership = await getCurrentOrg(supabase, user.id);
-  if (!orgMembership) redirect("/onboarding");
+  const orgMembership = (await ensureOrg(supabase, user.id))!;
 
   const { data: talent } = await supabase
     .from("talents")
     .select("*, talent_chips(chip_id, chips(id, label, color)), talent_photos(id, url, sort_order, label)")
     .eq("id", id)
-    .eq("org_id", orgMembership.orgId)
+    .eq(orgFilter(orgMembership.orgId, user.id).column, orgFilter(orgMembership.orgId, user.id).value)
     .single();
 
   if (!talent) notFound();
@@ -32,7 +31,7 @@ export default async function TalentProfilePage({
   const { data: chips } = await supabase
     .from("chips")
     .select("*")
-    .eq("org_id", orgMembership.orgId)
+    .eq(orgFilter(orgMembership.orgId, user.id).column, orgFilter(orgMembership.orgId, user.id).value)
     .order("label");
 
   const { data: notes } = await supabase
