@@ -41,7 +41,7 @@ export default function ClientShell({ children }: { children: React.ReactNode })
     <div className="flex h-screen bg-[#0D0F14]">
       <aside className="flex w-56 flex-col border-r border-[#1E2128]">
         <div className="flex h-14 items-center border-b border-[#1E2128] px-4">
-          <span className="text-lg font-bold text-[#C9A84C]">CastBrief</span>
+          <Link href="/client/projects" className="text-lg font-bold text-[#C9A84C] hover:text-[#D4B35C] transition-colors">CastBrief</Link>
         </div>
         <nav className="flex-1 px-2 py-4 space-y-1">
           {navItems.map((item) => {

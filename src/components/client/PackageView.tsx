@@ -281,8 +281,8 @@ function TalentCard({
           : "border border-[#1E2128]"
       } ${talent.isHiddenByClient ? "opacity-50" : ""} bg-[#161920]`}
     >
-      {/* Photo area — 3:4 aspect ratio headshot */}
-      <div className="relative" style={{ aspectRatio: "3/4" }}>
+      {/* Photo area — 4:5 aspect ratio headshot */}
+      <div className="relative" style={{ aspectRatio: "4/5" }}>
         {talent.photo_url ? (
           <img
             src={talent.photo_url}
@@ -315,8 +315,8 @@ function TalentCard({
         )}
 
         {/* Name overlay at bottom of photo */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-4 pb-3 pt-10">
-          <h3 className="text-lg font-bold text-white leading-tight">
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-3 pb-2 pt-8">
+          <h3 className="text-sm font-semibold text-white leading-tight">
             {talent.full_name}
           </h3>
         </div>
@@ -330,29 +330,24 @@ function TalentCard({
       </div>
 
       {/* Card body */}
-      <div className="p-4">
-        {/* Metadata row: age, location, cultural background */}
-        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-sm text-[#8B8D93] mb-1">
-          {talent.age && <span>Age {talent.age}</span>}
-          {talent.location && <span>{talent.location}</span>}
-          {talent.cultural_background && (
-            <span>{talent.cultural_background}</span>
-          )}
+      <div className="p-3">
+        {/* Compact metadata line: age · location · background · height */}
+        <div className="text-xs text-[#8B8D93] truncate mb-2">
+          {[
+            talent.age ? `${talent.age}` : null,
+            talent.location,
+            talent.cultural_background,
+            talent.height_cm ? `${talent.height_cm}cm` : null,
+            talent.weight_kg ? `${talent.weight_kg}kg` : null,
+          ]
+            .filter(Boolean)
+            .join(" \u00B7 ")}
         </div>
 
-        {/* Height / Weight */}
-        {(talent.height_cm || talent.weight_kg) && (
-          <div className="text-xs text-[#8B8D93] mb-3">
-            {talent.height_cm && `${talent.height_cm}cm`}
-            {talent.height_cm && talent.weight_kg && " / "}
-            {talent.weight_kg && `${talent.weight_kg}kg`}
-          </div>
-        )}
-
-        {/* Chips */}
+        {/* Chips — max 3 */}
         {talent.chips.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-3">
-            {talent.chips.map((chip) => (
+          <div className="flex flex-wrap gap-1 mb-2">
+            {talent.chips.slice(0, 3).map((chip) => (
               <span
                 key={chip.id}
                 className="rounded-full px-2 py-0.5 text-[10px] font-medium"
@@ -364,6 +359,11 @@ function TalentCard({
                 {chip.label}
               </span>
             ))}
+            {talent.chips.length > 3 && (
+              <span className="text-[10px] text-[#8B8D93] self-center">
+                +{talent.chips.length - 3}
+              </span>
+            )}
           </div>
         )}
 
@@ -419,11 +419,11 @@ function TalentCard({
           </div>
         )}
 
-        {/* Actions — full-width row */}
-        <div className="flex items-center gap-2 pt-3 border-t border-[#1E2128]">
+        {/* Actions — compact row */}
+        <div className="flex items-center gap-1.5 pt-2 border-t border-[#1E2128]">
           <button
             onClick={onTogglePick}
-            className={`flex-1 rounded-lg px-3 min-h-[44px] text-sm font-medium transition ${
+            className={`flex-1 rounded-lg px-3 min-h-[36px] text-sm font-medium transition ${
               talent.clientPick
                 ? "bg-[#C9A84C] text-[#0D0F14]"
                 : "bg-[#1E2128] text-[#E8E3D8] hover:bg-[#262930]"
@@ -433,7 +433,7 @@ function TalentCard({
           </button>
           <button
             onClick={onStartComment}
-            className="rounded-lg bg-[#1E2128] px-3 min-h-[44px] min-w-[44px] text-sm text-[#E8E3D8] hover:bg-[#262930] transition"
+            className="rounded-lg bg-[#1E2128] min-h-[36px] min-w-[36px] flex items-center justify-center text-sm text-[#E8E3D8] hover:bg-[#262930] transition"
             title="Comment"
           >
             &#128172;
@@ -441,7 +441,7 @@ function TalentCard({
           {!talent.isHiddenByClient && (
             <button
               onClick={onHide}
-              className="rounded-lg bg-[#1E2128] px-3 min-h-[44px] min-w-[44px] text-sm text-[#E8E3D8] hover:bg-red-900/20 hover:text-red-400 transition"
+              className="rounded-lg bg-[#1E2128] min-h-[36px] min-w-[36px] flex items-center justify-center text-sm text-[#E8E3D8] hover:bg-red-900/20 hover:text-red-400 transition"
               title="Hide"
             >
               &#128683;

@@ -295,7 +295,7 @@ export default function PackageBuilder({
                     photo_url={talent.photo_url}
                     name={talent.full_name}
                     size="md"
-                    aspectRatio="3/4"
+                    aspectRatio="4/5"
                   />
 
                   {/* Checkbox overlay on top-right corner */}
@@ -323,12 +323,12 @@ export default function PackageBuilder({
                 </div>
 
                 {/* Name + details below photo */}
-                <div className="p-2">
-                  <div className="text-sm font-medium text-[#E8E3D8] truncate">
+                <div className="p-1.5">
+                  <div className="text-xs font-medium text-[#E8E3D8] truncate">
                     {talent.full_name}
                   </div>
                   {talent.age && (
-                    <div className="text-[11px] text-[#8B8D93]">
+                    <div className="text-[10px] text-[#8B8D93]">
                       Age {talent.age}
                     </div>
                   )}

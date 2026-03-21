@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 export default function GlobalError({
   reset,
 }: {
@@ -16,12 +18,20 @@ export default function GlobalError({
         <p className="text-sm text-[#8B8D93] mb-6">
           An unexpected error occurred. Please try again.
         </p>
-        <button
-          onClick={reset}
-          className="rounded-lg bg-gradient-to-r from-[#C9A84C] to-[#B8943F] px-6 py-2 text-sm font-semibold text-[#0D0F14] hover:from-[#D4B35C] hover:to-[#C9A84C] transition"
-        >
-          Try Again
-        </button>
+        <div className="flex items-center justify-center gap-4">
+          <button
+            onClick={reset}
+            className="rounded-lg bg-gradient-to-r from-[#C9A84C] to-[#B8943F] px-6 py-2 text-sm font-semibold text-[#0D0F14] hover:from-[#D4B35C] hover:to-[#C9A84C] transition"
+          >
+            Try Again
+          </button>
+          <Link
+            href="/"
+            className="text-sm text-[#8B8D93] hover:text-[#E8E3D8] transition-colors"
+          >
+            Go Home
+          </Link>
+        </div>
       </div>
     </div>
   );

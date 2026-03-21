@@ -5,13 +5,13 @@ const steps = [
     number: "01",
     title: "Build",
     description:
-      "Add talent to your roster with headshots, reels, and key details. Organize by type, skill, or project.",
+      "Quickly set up your roster with headshots, reels, measurements, links to all their profiles. Organize your roster by skill, filters or by project.",
   },
   {
     number: "02",
     title: "Send",
     description:
-      "Create curated packages and share a single link with casting directors. No logins, no downloads, no friction.",
+      "Create curated packages and share a single link with clients. No logins, no downloads, no friction.",
   },
   {
     number: "03",
@@ -23,7 +23,7 @@ const steps = [
     number: "04",
     title: "Collect",
     description:
-      "Request self-tapes from selected talent. They receive a simple upload link. You get notified when files land.",
+      "The client makes selects and requests self-tapes. The talent will receive a simple upload link. You get notified when files land.",
   },
 ];
 
@@ -65,9 +65,9 @@ export default function Home() {
     <main className="min-h-screen bg-[#0D0F14] text-[#E8E3D8]">
       {/* ─── Nav ─── */}
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-        <span className="text-xl font-bold tracking-tight text-[#C9A84C]">
+        <Link href="/" className="text-xl font-bold tracking-tight text-[#C9A84C]">
           CastBrief
-        </span>
+        </Link>
         <div className="flex items-center gap-4">
           <Link
             href="/login"
@@ -90,14 +90,14 @@ export default function Home() {
           <span className="text-[#C9A84C]">CastBrief</span>
           <br />
           <span className="text-[#E8E3D8]">
-            Talent packaging,
-            <br className="hidden sm:block" /> built for how you actually work.
+            Talent packaging, done right
           </span>
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-lg text-[#8B8D93] leading-relaxed">
-          Build curated talent packages. Share them with a single link. Let
-          clients pick favorites, request self-tapes, and give feedback — all
-          without a single PDF or email thread.
+          Quickly build curated talent packages to send direct to clients. Share
+          them with a single link, let clients pick favorites, request self-tapes
+          directly from the package, hide talent, give feedback and make a
+          decision.
         </p>
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
@@ -115,57 +115,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─── Problem ─── */}
-      <section className="border-t border-[#1E2128] bg-[#0D0F14]">
-        <div className="mx-auto max-w-5xl px-6 py-24">
-          <h2 className="text-center text-2xl sm:text-3xl font-semibold tracking-tight">
-            The casting workflow is broken
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-center text-[#8B8D93] leading-relaxed">
-            Talent agents still rely on emailed PDFs, scattered text threads,
-            and spreadsheets to manage submissions. Feedback gets lost. Files go
-            missing. Nobody knows who picked whom.
-          </p>
-          <div className="mt-14 grid gap-6 sm:grid-cols-3">
-            {[
-              {
-                title: "PDFs that go nowhere",
-                body: "You spend hours assembling talent decks that get buried in inboxes or forwarded without context.",
-              },
-              {
-                title: "Scattered communication",
-                body: "Feedback arrives via email, text, DM, and voicemail. Piecing it together wastes hours every week.",
-              },
-              {
-                title: "Zero visibility",
-                body: "You have no idea if a client opened your submission, who they liked, or what happened next.",
-              },
-            ].map((item) => (
-              <div
-                key={item.title}
-                className="rounded-xl border border-[#1E2128] bg-[#161920] p-6"
-              >
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-[#C9A84C]">
-                  {item.title}
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-[#8B8D93]">
-                  {item.body}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ─── How It Works ─── */}
       <section className="border-t border-[#1E2128]">
         <div className="mx-auto max-w-5xl px-6 py-24">
           <h2 className="text-center text-2xl sm:text-3xl font-semibold tracking-tight">
             How it works
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-center text-[#8B8D93]">
-            Four steps. One platform. No PDFs.
-          </p>
           <div className="mt-14 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {steps.map((step) => (
               <div key={step.number}>
@@ -232,7 +187,7 @@ export default function Home() {
           <p className="mx-auto mt-3 max-w-lg text-sm text-[#8B8D93] leading-relaxed">
             If you received a package link from an agent, you can open it
             directly — no account needed. If you want to sign in and manage your
-            selections, use the link below.
+            selections, or create new projects, use the link below.
           </p>
           <Link
             href="/login"
@@ -246,9 +201,9 @@ export default function Home() {
       {/* ─── Footer ─── */}
       <footer className="border-t border-[#1E2128] bg-[#0D0F14]">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-8 sm:flex-row">
-          <span className="text-sm font-semibold text-[#C9A84C]">
+          <Link href="/" className="text-sm font-semibold text-[#C9A84C]">
             CastBrief
-          </span>
+          </Link>
           <div className="flex gap-6 text-xs text-[#8B8D93]">
             <Link href="/privacy" className="hover:text-[#E8E3D8] transition-colors">
               Privacy

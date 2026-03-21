@@ -171,13 +171,13 @@ export default function RosterClient({
                 : "border-[#1E2128]"
             }`}
           >
-            {/* Photo area — 3:4 aspect ratio */}
+            {/* Photo area — 4:5 aspect ratio */}
             <div className="relative">
               <TalentPhoto
                 photo_url={talent.photo_url}
                 name={talent.full_name}
                 size="lg"
-                aspectRatio="3/4"
+                aspectRatio="4/5"
               />
 
               {/* Checkbox overlay on top-right corner of photo */}
@@ -204,24 +204,24 @@ export default function RosterClient({
             </div>
 
             {/* Card body */}
-            <div className="p-4">
-              <h3 className="text-base font-bold text-[#E8E3D8] truncate mb-1">
+            <div className="p-3">
+              <h3 className="text-sm font-semibold text-[#E8E3D8] truncate mb-1">
                 {talent.full_name}
               </h3>
-              <div className="text-xs text-[#8B8D93] space-y-0.5 mb-3">
-                <div className="flex flex-wrap gap-x-3">
-                  {talent.age && <span>Age {talent.age}</span>}
-                  {talent.location && <span>{talent.location}</span>}
-                </div>
-                {talent.cultural_background && (
-                  <div>{talent.cultural_background}</div>
-                )}
+              <div className="text-xs text-[#8B8D93] truncate mb-2">
+                {[
+                  talent.age ? `Age ${talent.age}` : null,
+                  talent.location,
+                  talent.cultural_background,
+                ]
+                  .filter(Boolean)
+                  .join(" \u00B7 ")}
               </div>
 
               {/* Chips */}
               {talent.talent_chips.length > 0 && (
-                <div className="flex flex-wrap gap-1 mb-3">
-                  {talent.talent_chips.slice(0, 3).map((tc) => (
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {talent.talent_chips.slice(0, 2).map((tc) => (
                     <Chip
                       key={tc.chip_id}
                       label={tc.chips.label}
@@ -229,9 +229,9 @@ export default function RosterClient({
                       active
                     />
                   ))}
-                  {talent.talent_chips.length > 3 && (
-                    <span className="text-xs text-[#8B8D93] self-center">
-                      +{talent.talent_chips.length - 3}
+                  {talent.talent_chips.length > 2 && (
+                    <span className="text-[10px] text-[#8B8D93] self-center">
+                      +{talent.talent_chips.length - 2}
                     </span>
                   )}
                 </div>
@@ -239,7 +239,7 @@ export default function RosterClient({
 
               {/* Profile link badges */}
               {talent.links && Object.keys(talent.links).length > 0 && (
-                <div className="flex flex-wrap gap-1 mb-3">
+                <div className="flex flex-wrap gap-1 mb-2">
                   {Object.entries(talent.links)
                     .filter(([, url]) => url)
                     .map(([key]) => (
@@ -254,23 +254,20 @@ export default function RosterClient({
               )}
 
               {/* Actions */}
-              <div className="flex gap-2 pt-2 border-t border-[#1E2128]">
+              <div className="flex items-center gap-2 pt-2 border-t border-[#1E2128]">
                 <Link
                   href={`/agent/roster/${talent.id}`}
-                  className="flex-1"
+                  className="text-xs text-[#C9A84C] underline hover:text-[#D4B35C]"
                 >
-                  <Button variant="secondary" size="sm" className="w-full">
-                    View Profile
-                  </Button>
+                  View
                 </Link>
-                <Link
-                  href={`/agent/roster/${talent.id}#notes`}
-                  className="flex-1"
+                <span className="flex-1" />
+                <button
+                  className="text-sm text-[#8B8D93] hover:text-[#E8E3D8] transition-colors px-1"
+                  title="More options"
                 >
-                  <Button variant="ghost" size="sm" className="w-full">
-                    + Note
-                  </Button>
-                </Link>
+                  &#x22EF;
+                </button>
               </div>
             </div>
           </div>

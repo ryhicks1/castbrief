@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import PackageView from "@/components/client/PackageView";
 
@@ -82,6 +83,11 @@ export default async function PublicPackagePage({
 
   return (
     <div className="min-h-screen bg-[#0D0F14]">
+      <div className="max-w-5xl mx-auto px-4 pt-4 sm:px-6">
+        <Link href="/" className="text-xs font-semibold text-[#C9A84C] hover:text-[#D4B35C] transition-colors">
+          CastBrief
+        </Link>
+      </div>
       <PackageView
         packageId={pkg.id}
         token={pkg.token}
