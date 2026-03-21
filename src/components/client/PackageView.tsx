@@ -275,134 +275,179 @@ function TalentCard({
 
   return (
     <div
-      className={`rounded-xl border p-4 transition-all ${
+      className={`rounded-xl overflow-hidden transition-all ${
         talent.clientPick
-          ? "border-[#C9A84C]/50 bg-[#C9A84C]/5"
-          : "border-[#1E2128] bg-[#161920]"
-      } ${talent.isHiddenByClient ? "opacity-50" : ""}`}
+          ? "border-2 border-[#C9A84C] shadow-[0_0_20px_rgba(201,168,76,0.15)]"
+          : "border border-[#1E2128]"
+      } ${talent.isHiddenByClient ? "opacity-50" : ""} bg-[#161920]`}
     >
-      {/* Top section */}
-      <div className="flex gap-3 mb-3">
-        <InitialsAvatar name={talent.full_name} size={48} />
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-[#E8E3D8] truncate">
-            {talent.full_name}
-          </h3>
-          <div className="flex flex-wrap gap-x-3 text-xs text-[#8B8D93] mt-0.5">
-            {talent.age && <span>Age {talent.age}</span>}
-            {talent.location && <span>{talent.location}</span>}
-            {talent.cultural_background && (
-              <span>{talent.cultural_background}</span>
-            )}
-          </div>
-          {(talent.height_cm || talent.weight_kg) && (
-            <div className="text-xs text-[#8B8D93] mt-0.5">
-              {talent.height_cm && `${talent.height_cm}cm`}
-              {talent.height_cm && talent.weight_kg && " / "}
-              {talent.weight_kg && `${talent.weight_kg}kg`}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Chips */}
-      {talent.chips.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-3">
-          {talent.chips.map((chip) => (
+      {/* Photo area — 3:4 aspect ratio headshot */}
+      <div className="relative" style={{ aspectRatio: "3/4" }}>
+        {talent.photo_url ? (
+          <img
+            src={talent.photo_url}
+            alt={talent.full_name}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : (
+          <div
+            className="absolute inset-0 flex items-center justify-center"
+            style={{
+              background: "linear-gradient(160deg, #1E2128 0%, #2A2D35 100%)",
+            }}
+          >
             <span
-              key={chip.id}
-              className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+              className="text-5xl font-bold"
               style={{
-                backgroundColor: `${chip.color}20`,
-                color: chip.color,
+                background: "linear-gradient(135deg, #C9A84C, #8B6D1A)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
               }}
             >
-              {chip.label}
+              {talent.full_name
+                .split(" ")
+                .map((n) => n[0])
+                .join("")
+                .toUpperCase()
+                .slice(0, 2)}
             </span>
-          ))}
-        </div>
-      )}
-
-      {/* External links */}
-      {activeLinks.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-3">
-          {activeLinks.map(([key, url]) => (
-            <a
-              key={key}
-              href={url.startsWith("http") ? url : `https://${url}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded bg-[#1E2128] px-1.5 py-0.5 text-[10px] font-medium text-[#8B8D93] hover:text-[#C9A84C] hover:bg-[#C9A84C]/10 transition"
-            >
-              {linkLabels[key] || key}
-            </a>
-          ))}
-        </div>
-      )}
-
-      {/* Existing comment */}
-      {talent.clientComment && !isCommenting && (
-        <div className="mb-3 rounded-lg bg-[#0D0F14] px-3 py-2 text-xs text-[#8B8D93]">
-          &#128172; {talent.clientComment}
-        </div>
-      )}
-
-      {/* Comment input */}
-      {isCommenting && (
-        <div className="mb-3">
-          <textarea
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            placeholder="Leave a comment..."
-            rows={2}
-            autoFocus
-            className="w-full rounded-lg border border-[#2A2D35] bg-[#0D0F14] px-3 py-2 text-xs text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#C9A84C] focus:outline-none resize-none"
-          />
-          <div className="flex gap-2 mt-1">
-            <button
-              onClick={() => onSaveComment(comment)}
-              className="text-xs text-[#C9A84C] hover:underline"
-            >
-              Save
-            </button>
-            <button
-              onClick={onCancelComment}
-              className="text-xs text-[#8B8D93] hover:underline"
-            >
-              Cancel
-            </button>
           </div>
-        </div>
-      )}
-
-      {/* Actions */}
-      <div className="flex items-center gap-2 pt-2 border-t border-[#1E2128]">
-        <button
-          onClick={onTogglePick}
-          className={`flex-1 rounded-lg px-3 min-h-[44px] text-sm font-medium transition ${
-            talent.clientPick
-              ? "bg-[#C9A84C] text-[#0D0F14]"
-              : "bg-[#1E2128] text-[#E8E3D8] hover:bg-[#262930]"
-          }`}
-        >
-          {talent.clientPick ? "\u2713 Selected" : "Select"}
-        </button>
-        <button
-          onClick={onStartComment}
-          className="rounded-lg bg-[#1E2128] px-3 min-h-[44px] min-w-[44px] text-sm text-[#E8E3D8] hover:bg-[#262930] transition"
-          title="Comment"
-        >
-          &#128172;
-        </button>
-        {!talent.isHiddenByClient && (
-          <button
-            onClick={onHide}
-            className="rounded-lg bg-[#1E2128] px-3 min-h-[44px] min-w-[44px] text-sm text-[#E8E3D8] hover:bg-red-900/20 hover:text-red-400 transition"
-            title="Hide"
-          >
-            &#128683;
-          </button>
         )}
+
+        {/* Name overlay at bottom of photo */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-4 pb-3 pt-10">
+          <h3 className="text-lg font-bold text-white leading-tight">
+            {talent.full_name}
+          </h3>
+        </div>
+
+        {/* Selected badge on photo */}
+        {talent.clientPick && (
+          <div className="absolute top-3 right-3 rounded-full bg-[#C9A84C] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#0D0F14]">
+            Selected
+          </div>
+        )}
+      </div>
+
+      {/* Card body */}
+      <div className="p-4">
+        {/* Metadata row: age, location, cultural background */}
+        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-sm text-[#8B8D93] mb-1">
+          {talent.age && <span>Age {talent.age}</span>}
+          {talent.location && <span>{talent.location}</span>}
+          {talent.cultural_background && (
+            <span>{talent.cultural_background}</span>
+          )}
+        </div>
+
+        {/* Height / Weight */}
+        {(talent.height_cm || talent.weight_kg) && (
+          <div className="text-xs text-[#8B8D93] mb-3">
+            {talent.height_cm && `${talent.height_cm}cm`}
+            {talent.height_cm && talent.weight_kg && " / "}
+            {talent.weight_kg && `${talent.weight_kg}kg`}
+          </div>
+        )}
+
+        {/* Chips */}
+        {talent.chips.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-3">
+            {talent.chips.map((chip) => (
+              <span
+                key={chip.id}
+                className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+                style={{
+                  backgroundColor: `${chip.color}20`,
+                  color: chip.color,
+                }}
+              >
+                {chip.label}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* External links */}
+        {activeLinks.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-3">
+            {activeLinks.map(([key, url]) => (
+              <a
+                key={key}
+                href={url.startsWith("http") ? url : `https://${url}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded bg-[#1E2128] px-1.5 py-0.5 text-[10px] font-medium text-[#8B8D93] hover:text-[#C9A84C] hover:bg-[#C9A84C]/10 transition"
+              >
+                {linkLabels[key] || key}
+              </a>
+            ))}
+          </div>
+        )}
+
+        {/* Existing comment */}
+        {talent.clientComment && !isCommenting && (
+          <div className="mb-3 rounded-lg bg-[#0D0F14] px-3 py-2 text-xs text-[#8B8D93]">
+            &#128172; {talent.clientComment}
+          </div>
+        )}
+
+        {/* Comment input */}
+        {isCommenting && (
+          <div className="mb-3">
+            <textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Leave a comment..."
+              rows={2}
+              autoFocus
+              className="w-full rounded-lg border border-[#2A2D35] bg-[#0D0F14] px-3 py-2 text-xs text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#C9A84C] focus:outline-none resize-none"
+            />
+            <div className="flex gap-2 mt-1">
+              <button
+                onClick={() => onSaveComment(comment)}
+                className="text-xs text-[#C9A84C] hover:underline"
+              >
+                Save
+              </button>
+              <button
+                onClick={onCancelComment}
+                className="text-xs text-[#8B8D93] hover:underline"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Actions — full-width row */}
+        <div className="flex items-center gap-2 pt-3 border-t border-[#1E2128]">
+          <button
+            onClick={onTogglePick}
+            className={`flex-1 rounded-lg px-3 min-h-[44px] text-sm font-medium transition ${
+              talent.clientPick
+                ? "bg-[#C9A84C] text-[#0D0F14]"
+                : "bg-[#1E2128] text-[#E8E3D8] hover:bg-[#262930]"
+            }`}
+          >
+            {talent.clientPick ? "\u2713 Selected" : "Select"}
+          </button>
+          <button
+            onClick={onStartComment}
+            className="rounded-lg bg-[#1E2128] px-3 min-h-[44px] min-w-[44px] text-sm text-[#E8E3D8] hover:bg-[#262930] transition"
+            title="Comment"
+          >
+            &#128172;
+          </button>
+          {!talent.isHiddenByClient && (
+            <button
+              onClick={onHide}
+              className="rounded-lg bg-[#1E2128] px-3 min-h-[44px] min-w-[44px] text-sm text-[#E8E3D8] hover:bg-red-900/20 hover:text-red-400 transition"
+              title="Hide"
+            >
+              &#128683;
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

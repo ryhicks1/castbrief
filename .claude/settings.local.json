@@ -16,7 +16,9 @@
       "Bash(gh auth:*)",
       "Bash(gh api:*)",
       "Bash(npx vercel:*)",
-      "Bash(npx next:*)"
+      "Bash(npx next:*)",
+      "Bash(xargs -I{} gh api repos/ryhicks1/castbrief/deployments/{}/statuses --jq '.[0] | {state, description}')",
+      "WebFetch(domain:support.castingnetworks.com)"
     ]
   }
 }

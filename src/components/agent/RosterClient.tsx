@@ -2,7 +2,8 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Button, Avatar, Chip } from "@/components/ui";
+import { Button, Chip } from "@/components/ui";
+import { TalentPhoto } from "@/components/ui/Avatar";
 
 interface TalentChip {
   chip_id: string;
@@ -164,90 +165,113 @@ export default function RosterClient({
         {filtered.map((talent) => (
           <div
             key={talent.id}
-            className="relative rounded-xl border border-[#1E2128] bg-[#161920] p-4 transition hover:border-[#2A2D35]"
+            className={`relative rounded-xl overflow-hidden border transition hover:border-[#2A2D35] bg-[#161920] ${
+              selected.has(talent.id)
+                ? "border-[#C9A84C] shadow-[0_0_16px_rgba(201,168,76,0.12)]"
+                : "border-[#1E2128]"
+            }`}
           >
-            {/* Checkbox */}
-            <input
-              type="checkbox"
-              checked={selected.has(talent.id)}
-              onChange={() => toggleSelect(talent.id)}
-              className="absolute top-3 right-3 h-4 w-4 rounded border-[#2A2D35] bg-[#1E2128] accent-[#C9A84C]"
-            />
-
-            {/* Content */}
-            <div className="flex items-start gap-3 mb-3">
-              <Avatar
-                src={talent.photo_url}
+            {/* Photo area — 3:4 aspect ratio */}
+            <div className="relative">
+              <TalentPhoto
+                photo_url={talent.photo_url}
                 name={talent.full_name}
                 size="lg"
+                aspectRatio="3/4"
               />
-              <div className="min-w-0 flex-1">
-                <h3 className="font-semibold text-[#E8E3D8] truncate">
-                  {talent.full_name}
-                </h3>
-                <div className="text-xs text-[#8B8D93] space-y-0.5 mt-1">
-                  {talent.age && <div>Age {talent.age}</div>}
-                  {talent.location && <div>{talent.location}</div>}
-                  {talent.cultural_background && (
-                    <div>{talent.cultural_background}</div>
+
+              {/* Checkbox overlay on top-right corner of photo */}
+              <div className="absolute top-3 right-3 z-10">
+                <label className="flex items-center justify-center w-6 h-6 rounded border-2 cursor-pointer transition-colors"
+                  style={{
+                    borderColor: selected.has(talent.id) ? "#C9A84C" : "#8B8D93",
+                    backgroundColor: selected.has(talent.id) ? "#C9A84C" : "rgba(13,15,20,0.6)",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selected.has(talent.id)}
+                    onChange={() => toggleSelect(talent.id)}
+                    className="sr-only"
+                  />
+                  {selected.has(talent.id) && (
+                    <svg className="w-4 h-4 text-[#0D0F14]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
                   )}
-                </div>
+                </label>
               </div>
             </div>
 
-            {/* Chips */}
-            {talent.talent_chips.length > 0 && (
-              <div className="flex flex-wrap gap-1 mb-3">
-                {talent.talent_chips.slice(0, 3).map((tc) => (
-                  <Chip
-                    key={tc.chip_id}
-                    label={tc.chips.label}
-                    color={tc.chips.color}
-                    active
-                  />
-                ))}
-                {talent.talent_chips.length > 3 && (
-                  <span className="text-xs text-[#8B8D93] self-center">
-                    +{talent.talent_chips.length - 3}
-                  </span>
+            {/* Card body */}
+            <div className="p-4">
+              <h3 className="text-base font-bold text-[#E8E3D8] truncate mb-1">
+                {talent.full_name}
+              </h3>
+              <div className="text-xs text-[#8B8D93] space-y-0.5 mb-3">
+                <div className="flex flex-wrap gap-x-3">
+                  {talent.age && <span>Age {talent.age}</span>}
+                  {talent.location && <span>{talent.location}</span>}
+                </div>
+                {talent.cultural_background && (
+                  <div>{talent.cultural_background}</div>
                 )}
               </div>
-            )}
 
-            {/* Profile link badges */}
-            {talent.links && Object.keys(talent.links).length > 0 && (
-              <div className="flex flex-wrap gap-1 mb-3">
-                {Object.entries(talent.links)
-                  .filter(([, url]) => url)
-                  .map(([key]) => (
-                    <span
-                      key={key}
-                      className="rounded bg-[#1E2128] px-1.5 py-0.5 text-[10px] font-medium text-[#8B8D93]"
-                    >
-                      {linkLabels[key] || key.toUpperCase()}
-                    </span>
+              {/* Chips */}
+              {talent.talent_chips.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-3">
+                  {talent.talent_chips.slice(0, 3).map((tc) => (
+                    <Chip
+                      key={tc.chip_id}
+                      label={tc.chips.label}
+                      color={tc.chips.color}
+                      active
+                    />
                   ))}
-              </div>
-            )}
+                  {talent.talent_chips.length > 3 && (
+                    <span className="text-xs text-[#8B8D93] self-center">
+                      +{talent.talent_chips.length - 3}
+                    </span>
+                  )}
+                </div>
+              )}
 
-            {/* Actions */}
-            <div className="flex gap-2 pt-2 border-t border-[#1E2128]">
-              <Link
-                href={`/agent/roster/${talent.id}`}
-                className="flex-1"
-              >
-                <Button variant="secondary" size="sm" className="w-full">
-                  View Profile
-                </Button>
-              </Link>
-              <Link
-                href={`/agent/roster/${talent.id}#notes`}
-                className="flex-1"
-              >
-                <Button variant="ghost" size="sm" className="w-full">
-                  + Note
-                </Button>
-              </Link>
+              {/* Profile link badges */}
+              {talent.links && Object.keys(talent.links).length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-3">
+                  {Object.entries(talent.links)
+                    .filter(([, url]) => url)
+                    .map(([key]) => (
+                      <span
+                        key={key}
+                        className="rounded bg-[#1E2128] px-1.5 py-0.5 text-[10px] font-medium text-[#8B8D93]"
+                      >
+                        {linkLabels[key] || key.toUpperCase()}
+                      </span>
+                    ))}
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex gap-2 pt-2 border-t border-[#1E2128]">
+                <Link
+                  href={`/agent/roster/${talent.id}`}
+                  className="flex-1"
+                >
+                  <Button variant="secondary" size="sm" className="w-full">
+                    View Profile
+                  </Button>
+                </Link>
+                <Link
+                  href={`/agent/roster/${talent.id}#notes`}
+                  className="flex-1"
+                >
+                  <Button variant="ghost" size="sm" className="w-full">
+                    + Note
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         ))}

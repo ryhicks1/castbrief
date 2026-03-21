@@ -3,7 +3,8 @@
 import { useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Button, Input, Avatar, Chip } from "@/components/ui";
+import { Button, Input, Chip } from "@/components/ui";
+import { TalentPhoto } from "@/components/ui/Avatar";
 
 interface TalentChip {
   chip_id: string;
@@ -277,49 +278,76 @@ export default function PackageBuilder({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto space-y-1 pr-1">
-          {filtered.map((talent) => (
-            <label
-              key={talent.id}
-              className={`flex items-center gap-3 rounded-lg p-2.5 cursor-pointer transition ${
-                selected.has(talent.id)
-                  ? "bg-[#C9A84C]/10 border border-[#C9A84C]/30"
-                  : "hover:bg-[#161920] border border-transparent"
-              }`}
-            >
-              <input
-                type="checkbox"
-                checked={selected.has(talent.id)}
-                onChange={() => toggleSelect(talent.id)}
-                className="h-4 w-4 rounded accent-[#C9A84C]"
-              />
-              <Avatar
-                src={talent.photo_url}
-                name={talent.full_name}
-                size="sm"
-              />
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-[#E8E3D8] truncate">
-                  {talent.full_name}
-                </div>
-                {talent.age && (
-                  <div className="text-xs text-[#8B8D93]">
-                    Age {talent.age}
-                  </div>
-                )}
-              </div>
-              <div className="flex gap-1">
-                {talent.talent_chips.slice(0, 2).map((tc) => (
-                  <Chip
-                    key={tc.chip_id}
-                    label={tc.chips.label}
-                    color={tc.chips.color}
-                    active
+        <div className="flex-1 overflow-y-auto pr-1">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {filtered.map((talent) => (
+              <label
+                key={talent.id}
+                className={`relative rounded-xl overflow-hidden cursor-pointer transition ${
+                  selected.has(talent.id)
+                    ? "ring-2 ring-[#C9A84C] shadow-[0_0_12px_rgba(201,168,76,0.1)]"
+                    : "ring-1 ring-[#1E2128] hover:ring-[#2A2D35]"
+                } bg-[#161920]`}
+              >
+                {/* Photo area */}
+                <div className="relative">
+                  <TalentPhoto
+                    photo_url={talent.photo_url}
+                    name={talent.full_name}
+                    size="md"
+                    aspectRatio="3/4"
                   />
-                ))}
-              </div>
-            </label>
-          ))}
+
+                  {/* Checkbox overlay on top-right corner */}
+                  <div className="absolute top-2 right-2 z-10">
+                    <div
+                      className="flex items-center justify-center w-5 h-5 rounded border-2 transition-colors"
+                      style={{
+                        borderColor: selected.has(talent.id) ? "#C9A84C" : "#8B8D93",
+                        backgroundColor: selected.has(talent.id) ? "#C9A84C" : "rgba(13,15,20,0.6)",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selected.has(talent.id)}
+                        onChange={() => toggleSelect(talent.id)}
+                        className="sr-only"
+                      />
+                      {selected.has(talent.id) && (
+                        <svg className="w-3 h-3 text-[#0D0F14]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Name + details below photo */}
+                <div className="p-2">
+                  <div className="text-sm font-medium text-[#E8E3D8] truncate">
+                    {talent.full_name}
+                  </div>
+                  {talent.age && (
+                    <div className="text-[11px] text-[#8B8D93]">
+                      Age {talent.age}
+                    </div>
+                  )}
+                  {talent.talent_chips.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {talent.talent_chips.slice(0, 2).map((tc) => (
+                        <Chip
+                          key={tc.chip_id}
+                          label={tc.chips.label}
+                          color={tc.chips.color}
+                          active
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </label>
+            ))}
+          </div>
         </div>
       </div>
 
