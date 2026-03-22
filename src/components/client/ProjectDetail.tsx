@@ -5,6 +5,17 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Badge, Button, Input } from "@/components/ui";
+import {
+  Users,
+  Star,
+  Clock,
+  Send,
+  CheckCircle,
+  AlertTriangle,
+  ChevronRight,
+  Image as ImageIcon,
+  Calendar,
+} from "lucide-react";
 
 function agencyColor(agentId: string): string {
   let hash = 0;
@@ -13,6 +24,12 @@ function agencyColor(agentId: string): string {
   }
   const hue = Math.abs(hash) % 360;
   return `hsl(${hue}, 60%, 55%)`;
+}
+
+function daysUntil(date: string): number {
+  const now = new Date();
+  const target = new Date(date);
+  return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 interface PackageRequest {
@@ -50,6 +67,8 @@ interface ProjectDetailProps {
             id: string;
             talent_id: string;
             client_pick: boolean;
+            media_requested?: boolean;
+            upload_status?: string;
             talents: { id: string; full_name: string; photo_url: string | null };
           }[];
         };
@@ -72,6 +91,28 @@ export default function ProjectDetail({ project, userId, requests = [] }: Projec
     archived: "text-[#6B7280] bg-[#6B7280]/10",
   };
 
+  // Compute project-level stats
+  const allTalents = project.roles.flatMap((r) =>
+    (r.role_packages || []).flatMap((rp) => rp.packages?.package_talents || [])
+  );
+  const totalTalent = allTalents.length;
+  const totalPicks = allTalents.filter((t) => t.client_pick).length;
+  const totalMediaRequested = allTalents.filter((t: any) => t.media_requested).length;
+  const totalMediaUploaded = allTalents.filter((t: any) => t.upload_status === "uploaded").length;
+  const pendingRequests = requests.filter((r) => r.status !== "responded").length;
+  const respondedRequests = requests.filter((r) => r.status === "responded").length;
+
+  // Deadline info
+  const deadlineInfo = project.deadline
+    ? (() => {
+        const days = daysUntil(project.deadline);
+        if (days < 0) return { text: `${Math.abs(days)} days overdue`, color: "text-red-400", bgColor: "bg-red-500/5 border-red-500/20" };
+        if (days === 0) return { text: "Due today", color: "text-red-400", bgColor: "bg-red-500/5 border-red-500/20" };
+        if (days <= 3) return { text: `${days} days remaining`, color: "text-amber-400", bgColor: "bg-amber-500/5 border-amber-500/20" };
+        return { text: `${days} days remaining`, color: "text-[#8B8D93]", bgColor: "bg-[#161920] border-[#1E2128]" };
+      })()
+    : null;
+
   async function handleAddRole(e: React.FormEvent) {
     e.preventDefault();
     if (!roleName.trim()) return;
@@ -92,6 +133,15 @@ export default function ProjectDetail({ project, userId, requests = [] }: Projec
 
   return (
     <div>
+      {/* Breadcrumb */}
+      <div className="text-xs text-[#8B8D93] mb-4">
+        <Link href="/client/projects" className="hover:text-[#E8E3D8]">
+          Dashboard
+        </Link>
+        <span className="mx-2">/</span>
+        <span className="text-[#E8E3D8]">{project.name}</span>
+      </div>
+
       {/* Project header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-1">
@@ -117,6 +167,25 @@ export default function ProjectDetail({ project, userId, requests = [] }: Projec
             Request Package from Agent
           </Link>
         </div>
+      </div>
+
+      {/* Stats bar + deadline */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+        <MiniStat icon={Users} label="Talent" value={totalTalent} />
+        <MiniStat icon={Star} label="Picks" value={totalPicks} accent />
+        <MiniStat icon={Send} label="Requests" value={`${respondedRequests}/${requests.length}`} />
+        {totalMediaRequested > 0 && (
+          <MiniStat icon={ImageIcon} label="Media" value={`${totalMediaUploaded}/${totalMediaRequested}`} />
+        )}
+        {deadlineInfo && (
+          <div className={`rounded-xl border p-3 ${deadlineInfo.bgColor}`}>
+            <div className="flex items-center gap-1.5 mb-1">
+              <Calendar size={13} className={deadlineInfo.color} />
+              <span className="text-[10px] text-[#8B8D93] uppercase tracking-wider">Deadline</span>
+            </div>
+            <p className={`text-sm font-semibold ${deadlineInfo.color}`}>{deadlineInfo.text}</p>
+          </div>
+        )}
       </div>
 
       {/* Add role form */}
@@ -153,11 +222,13 @@ export default function ProjectDetail({ project, userId, requests = [] }: Projec
       {/* Roles list */}
       <div className="space-y-3">
         {(project.roles || []).map((role) => {
-          const allTalents = role.role_packages?.flatMap(
+          const allRoleTalents = role.role_packages?.flatMap(
             (rp) => rp.packages?.package_talents || []
           ) || [];
-          const talentCount = allTalents.length;
-          const pickCount = allTalents.filter((t) => t.client_pick).length;
+          const talentCount = allRoleTalents.length;
+          const pickCount = allRoleTalents.filter((t) => t.client_pick).length;
+          const mediaRequested = allRoleTalents.filter((t: any) => t.media_requested).length;
+          const mediaUploaded = allRoleTalents.filter((t: any) => t.upload_status === "uploaded").length;
           const agentIds = [
             ...new Set(
               role.role_packages
@@ -165,6 +236,9 @@ export default function ProjectDetail({ project, userId, requests = [] }: Projec
                 .filter(Boolean) || []
             ),
           ];
+          const progress = talentCount > 0 ? (pickCount / talentCount) * 100 : 0;
+          const roleRequests = requests.filter((r) => r.role_id === role.id);
+          const rolePending = roleRequests.filter((r) => r.status !== "responded").length;
 
           return (
             <div
@@ -172,8 +246,16 @@ export default function ProjectDetail({ project, userId, requests = [] }: Projec
               className="rounded-xl border border-[#1E2128] bg-[#161920] p-4"
             >
               <div className="flex items-start justify-between mb-2">
-                <div>
-                  <h3 className="font-semibold text-[#E8E3D8]">{role.name}</h3>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-[#E8E3D8]">{role.name}</h3>
+                    {rolePending > 0 && (
+                      <span className="flex items-center gap-1 text-[10px] text-amber-400">
+                        <Clock size={10} />
+                        {rolePending} pending
+                      </span>
+                    )}
+                  </div>
                   {role.brief && (
                     <p className="text-xs text-[#8B8D93] mt-0.5">
                       {role.brief}
@@ -182,11 +264,28 @@ export default function ProjectDetail({ project, userId, requests = [] }: Projec
                 </div>
                 <Link
                   href={`/client/projects/${project.id}/roles/${role.id}`}
-                  className="text-xs text-[#C9A84C] hover:underline shrink-0"
+                  className="flex items-center gap-1 text-xs text-[#C9A84C] hover:underline shrink-0"
                 >
-                  Review Role &rarr;
+                  Review Talent
+                  <ChevronRight size={12} />
                 </Link>
               </div>
+
+              {/* Progress bar */}
+              {talentCount > 0 && (
+                <div className="mb-3">
+                  <div className="flex items-center justify-between text-[10px] text-[#8B8D93] mb-1">
+                    <span>Selection progress</span>
+                    <span>{pickCount} of {talentCount} selected</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-[#1E2128] overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-[#C9A84C] to-[#B8943F] transition-all duration-500"
+                      style={{ width: `${Math.min(progress, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Agency chips */}
               {agentIds.length > 0 && (
@@ -199,6 +298,9 @@ export default function ProjectDetail({ project, userId, requests = [] }: Projec
                       pkg?.profiles?.agency_name ||
                       pkg?.profiles?.full_name ||
                       "Agency";
+                    const agentTalentCount = role.role_packages
+                      ?.filter((rp) => rp.packages?.agent_id === aid)
+                      .reduce((s, rp) => s + (rp.packages?.package_talents?.length || 0), 0) || 0;
                     return (
                       <span
                         key={aid}
@@ -208,7 +310,7 @@ export default function ProjectDetail({ project, userId, requests = [] }: Projec
                           color: agencyColor(aid),
                         }}
                       >
-                        {label}
+                        {label} ({agentTalentCount})
                       </span>
                     );
                   })}
@@ -216,9 +318,9 @@ export default function ProjectDetail({ project, userId, requests = [] }: Projec
               )}
 
               {/* Talent strip */}
-              {allTalents.length > 0 && (
+              {allRoleTalents.length > 0 && (
                 <div className="flex gap-1 overflow-x-auto pb-1 mb-2">
-                  {allTalents.slice(0, 12).map((pt) => {
+                  {allRoleTalents.slice(0, 12).map((pt) => {
                     const pkg = role.role_packages?.find((rp) =>
                       rp.packages?.package_talents?.some(
                         (t) => t.id === pt.id
@@ -249,9 +351,9 @@ export default function ProjectDetail({ project, userId, requests = [] }: Projec
                       </div>
                     );
                   })}
-                  {allTalents.length > 12 && (
+                  {allRoleTalents.length > 12 && (
                     <span className="text-xs text-[#8B8D93] self-center ml-1">
-                      +{allTalents.length - 12}
+                      +{allRoleTalents.length - 12}
                     </span>
                   )}
                 </div>
@@ -259,8 +361,11 @@ export default function ProjectDetail({ project, userId, requests = [] }: Projec
 
               <div className="flex items-center gap-4 text-xs text-[#8B8D93]">
                 <span>{talentCount} talent</span>
-                <span>{pickCount} pick{pickCount !== 1 ? "s" : ""}</span>
-                {pickCount > 0 && (
+                <span className="text-[#C9A84C]">{pickCount} pick{pickCount !== 1 ? "s" : ""}</span>
+                {mediaRequested > 0 && (
+                  <span>{mediaUploaded}/{mediaRequested} media uploaded</span>
+                )}
+                {pickCount > 0 && mediaRequested === 0 && (
                   <button className="text-[#C9A84C] hover:underline">
                     Request Media ({pickCount})
                   </button>
@@ -271,11 +376,18 @@ export default function ProjectDetail({ project, userId, requests = [] }: Projec
         })}
       </div>
 
-      {/* Requests section */}
+      {/* Requests tracking section */}
       <div className="mt-8">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-[#8B8D93] mb-3">
-          Requests
-        </h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-[#8B8D93]">
+            Request Tracking
+          </h2>
+          {requests.length > 0 && (
+            <span className="text-xs text-[#8B8D93]">
+              {respondedRequests} of {requests.length} responded
+            </span>
+          )}
+        </div>
         {requests.length === 0 ? (
           <p className="text-sm text-[#8B8D93]">No requests sent yet.</p>
         ) : (
@@ -287,13 +399,30 @@ export default function ProjectDetail({ project, userId, requests = [] }: Projec
                   <th className="px-4 py-3 font-medium">Role</th>
                   <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 font-medium">Date Sent</th>
+                  <th className="px-4 py-3 font-medium">Wait Time</th>
                 </tr>
               </thead>
               <tbody>
                 {requests.map((req) => {
                   const role = project.roles?.find((r) => r.id === req.role_id);
-                  const roleName = role ? role.name : "Any Role";
+                  const rName = role ? role.name : "All Roles";
                   const isResponded = req.status === "responded";
+                  const waitDays = Math.floor(
+                    (Date.now() - new Date(req.created_at).getTime()) / (1000 * 60 * 60 * 24)
+                  );
+                  const waitLabel = isResponded
+                    ? "Responded"
+                    : waitDays === 0
+                    ? "Today"
+                    : `${waitDays}d waiting`;
+                  const waitColor = isResponded
+                    ? "text-green-400"
+                    : waitDays > 7
+                    ? "text-red-400"
+                    : waitDays > 3
+                    ? "text-amber-400"
+                    : "text-[#8B8D93]";
+
                   return (
                     <tr
                       key={req.id}
@@ -302,7 +431,7 @@ export default function ProjectDetail({ project, userId, requests = [] }: Projec
                       <td className="px-4 py-3 text-[#E8E3D8]">
                         {req.agent_email}
                       </td>
-                      <td className="px-4 py-3 text-[#8B8D93]">{roleName}</td>
+                      <td className="px-4 py-3 text-[#8B8D93]">{rName}</td>
                       <td className="px-4 py-3">
                         <Badge
                           label={isResponded ? "Responded" : "Pending"}
@@ -316,6 +445,9 @@ export default function ProjectDetail({ project, userId, requests = [] }: Projec
                           year: "numeric",
                         })}
                       </td>
+                      <td className={`px-4 py-3 text-xs font-medium ${waitColor}`}>
+                        {waitLabel}
+                      </td>
                     </tr>
                   );
                 })}
@@ -324,6 +456,30 @@ export default function ProjectDetail({ project, userId, requests = [] }: Projec
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function MiniStat({
+  icon: Icon,
+  label,
+  value,
+  accent,
+}: {
+  icon: any;
+  label: string;
+  value: number | string;
+  accent?: boolean;
+}) {
+  return (
+    <div className="rounded-xl border border-[#1E2128] bg-[#161920] p-3">
+      <div className="flex items-center gap-1.5 mb-1">
+        <Icon size={13} className={accent ? "text-[#C9A84C]" : "text-[#8B8D93]"} />
+        <span className="text-[10px] text-[#8B8D93] uppercase tracking-wider">{label}</span>
+      </div>
+      <p className={`text-lg font-bold ${accent ? "text-[#C9A84C]" : "text-[#E8E3D8]"}`}>
+        {value}
+      </p>
     </div>
   );
 }

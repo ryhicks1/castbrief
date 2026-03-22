@@ -1,115 +1,116 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-export const metadata = { title: "Projects — CastingBrief" };
-
-function agencyColor(agentId: string): string {
-  let hash = 0;
-  for (let i = 0; i < agentId.length; i++) {
-    hash = agentId.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const hue = Math.abs(hash) % 360;
-  return `hsl(${hue}, 60%, 55%)`;
-}
+import ProjectDashboard from "@/components/client/ProjectDashboard";
+export const metadata = { title: "Dashboard — CastingBrief" };
 
 export default async function ProjectsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: projects, error: projectsError } = await supabase
+  // Fetch projects with roles
+  const { data: projects } = await supabase
     .from("projects")
-    .select(`
-      id, name, brand, type, status, deadline, created_at,
-      roles(id)
-    `)
+    .select("id, name, brand, type, status, deadline, created_at, roles(id, name, brief)")
     .eq("client_id", user.id)
     .order("created_at", { ascending: false });
 
+  // Fetch all role_packages for these projects
+  const allRoleIds = (projects || []).flatMap((p: any) => (p.roles || []).map((r: any) => r.id));
+  let rolePackages: any[] = [];
 
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-bold text-[#E8E3D8]">Projects</h1>
-        <Link
-          href="/client/projects/new"
-          className="inline-flex items-center justify-center rounded-lg bg-[#B8964C] px-4 py-2 text-sm font-semibold text-[#0F0F12] hover:bg-[#C9A64C] hover:shadow-lg hover:shadow-[#B8964C]/10 transition-all duration-300"
-        >
-          + New Project
-        </Link>
-      </div>
+  if (allRoleIds.length > 0) {
+    const { data: rp } = await supabase
+      .from("role_packages")
+      .select(`
+        role_id, package_id,
+        packages(
+          id, name, agent_id, status, last_viewed_at,
+          package_talents(id, talent_id, client_pick, media_requested, upload_status)
+        )
+      `)
+      .in("role_id", allRoleIds);
+    rolePackages = rp || [];
+  }
 
-      {!projects || projects.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24">
-          <div className="text-5xl mb-4">&#9632;</div>
-          <h2 className="text-xl font-semibold text-[#E8E3D8] mb-2">No projects yet</h2>
-          <p className="text-[#8B8D93] mb-6 text-sm">Create your first project to start organizing talent.</p>
-          <Link
-            href="/client/projects/new"
-            className="inline-flex items-center justify-center rounded-lg bg-[#B8964C] px-4 py-2 text-sm font-semibold text-[#0F0F12] hover:bg-[#C9A64C] hover:shadow-lg hover:shadow-[#B8964C]/10 transition-all duration-300"
-          >
-            Create Project
-          </Link>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {projects.map((project: any) => {
-            const roleCount = project.roles?.length || 0;
-            const allPackages = project.roles?.flatMap((r: any) =>
-              r.role_packages?.map((rp: any) => rp.packages) || []
-            ) || [];
-            const agentIds = [...new Set(allPackages.map((p: any) => p?.agent_id).filter(Boolean))] as string[];
-            const talentCount = allPackages.reduce(
-              (sum: number, p: any) => sum + (p?.package_talents?.length || 0), 0
-            );
-            const pickCount = allPackages.reduce(
-              (sum: number, p: any) => sum + (p?.package_talents?.filter((pt: any) => pt.client_pick)?.length || 0), 0
-            );
+  // Fetch agent profiles
+  const agentIds = [...new Set(rolePackages.map((rp: any) => rp.packages?.agent_id).filter(Boolean))];
+  let agentProfiles: Record<string, any> = {};
+  if (agentIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, full_name, agency_name")
+      .in("id", agentIds as string[]);
+    for (const p of profiles || []) {
+      agentProfiles[p.id] = p;
+    }
+  }
 
-            const statusColors: Record<string, string> = {
-              active: "text-green-400",
-              casting: "text-[#C9A84C]",
-              wrapped: "text-[#8B8D93]",
-              archived: "text-[#6B7280]",
-            };
+  // Fetch all package requests
+  const projectIds = (projects || []).map((p: any) => p.id);
+  let allRequests: any[] = [];
+  if (projectIds.length > 0) {
+    const { data: requests } = await supabase
+      .from("package_requests")
+      .select("id, agent_email, project_id, role_id, brief, created_at, status")
+      .in("project_id", projectIds)
+      .order("created_at", { ascending: false });
+    allRequests = requests || [];
+  }
 
-            return (
-              <Link
-                key={project.id}
-                href={`/client/projects/${project.id}`}
-                className="rounded-xl border border-[#1E2128] bg-[#161920] p-5 hover:border-[#2A2D35] transition"
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="font-semibold text-[#E8E3D8]">{project.name}</h3>
-                  <span className={`text-xs capitalize ${statusColors[project.status] || "text-[#8B8D93]"}`}>
-                    {project.status}
-                  </span>
-                </div>
-                {project.brand && (
-                  <p className="text-xs text-[#8B8D93] mb-3">{project.brand} &middot; {project.type}</p>
-                )}
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#8B8D93] mb-3">
-                  <span>{roleCount} role{roleCount !== 1 ? "s" : ""}</span>
-                  <span>{agentIds.length} agenc{agentIds.length !== 1 ? "ies" : "y"}</span>
-                  <span>{talentCount} talent</span>
-                  <span>{pickCount} pick{pickCount !== 1 ? "s" : ""}</span>
-                </div>
-                {agentIds.length > 0 && (
-                  <div className="flex gap-1">
-                    {agentIds.slice(0, 5).map((aid) => (
-                      <span
-                        key={aid}
-                        className="h-2 w-2 rounded-full"
-                        style={{ backgroundColor: agencyColor(aid) }}
-                      />
-                    ))}
-                  </div>
-                )}
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
+  // Assemble enriched projects
+  const enrichedProjects = (projects || []).map((project: any) => {
+    const projectRequests = allRequests.filter((r: any) => r.project_id === project.id);
+    const roles = (project.roles || []).map((role: any) => {
+      const rps = rolePackages.filter((rp: any) => rp.role_id === role.id);
+      const packages = rps.map((rp: any) => ({
+        ...rp.packages,
+        profiles: rp.packages?.agent_id ? agentProfiles[rp.packages.agent_id] : null,
+      })).filter(Boolean);
+      const allTalents = packages.flatMap((p: any) => p.package_talents || []);
+      const picks = allTalents.filter((t: any) => t.client_pick);
+      const mediaRequested = allTalents.filter((t: any) => t.media_requested);
+      const mediaUploaded = allTalents.filter((t: any) => t.upload_status === "uploaded");
+
+      return {
+        ...role,
+        packageCount: packages.length,
+        talentCount: allTalents.length,
+        pickCount: picks.length,
+        mediaRequestedCount: mediaRequested.length,
+        mediaUploadedCount: mediaUploaded.length,
+        agentIds: [...new Set(packages.map((p: any) => p.agent_id).filter(Boolean))],
+        agentProfiles: packages.reduce((acc: any, p: any) => {
+          if (p.agent_id && p.profiles) acc[p.agent_id] = p.profiles;
+          return acc;
+        }, {}),
+      };
+    });
+
+    const totalTalent = roles.reduce((s: number, r: any) => s + r.talentCount, 0);
+    const totalPicks = roles.reduce((s: number, r: any) => s + r.pickCount, 0);
+    const totalMediaRequested = roles.reduce((s: number, r: any) => s + r.mediaRequestedCount, 0);
+    const totalMediaUploaded = roles.reduce((s: number, r: any) => s + r.mediaUploadedCount, 0);
+    const pendingRequests = projectRequests.filter((r: any) => r.status !== "responded").length;
+    const respondedRequests = projectRequests.filter((r: any) => r.status === "responded").length;
+
+    return {
+      ...project,
+      roles,
+      requests: projectRequests,
+      stats: {
+        roleCount: roles.length,
+        totalTalent,
+        totalPicks,
+        totalMediaRequested,
+        totalMediaUploaded,
+        pendingRequests,
+        respondedRequests,
+        totalRequests: projectRequests.length,
+      },
+    };
+  });
+
+  return <ProjectDashboard projects={enrichedProjects} />;
 }

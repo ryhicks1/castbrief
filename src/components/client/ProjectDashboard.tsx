@@ -1,0 +1,295 @@
+"use client";
+
+import Link from "next/link";
+import {
+  FolderKanban,
+  Users,
+  Star,
+  Clock,
+  Send,
+  CheckCircle,
+  AlertTriangle,
+  ChevronRight,
+  Film,
+  Tv,
+  Clapperboard,
+  Image as ImageIcon,
+} from "lucide-react";
+import { Badge } from "@/components/ui";
+
+function agencyColor(agentId: string): string {
+  let hash = 0;
+  for (let i = 0; i < agentId.length; i++) {
+    hash = agentId.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue}, 60%, 55%)`;
+}
+
+function daysUntil(date: string): number {
+  const now = new Date();
+  const target = new Date(date);
+  return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function deadlineLabel(deadline: string | null): { text: string; color: string } | null {
+  if (!deadline) return null;
+  const days = daysUntil(deadline);
+  if (days < 0) return { text: `${Math.abs(days)}d overdue`, color: "text-red-400" };
+  if (days === 0) return { text: "Due today", color: "text-red-400" };
+  if (days <= 3) return { text: `${days}d left`, color: "text-amber-400" };
+  if (days <= 7) return { text: `${days}d left`, color: "text-[#C9A84C]" };
+  return { text: `${days}d left`, color: "text-[#8B8D93]" };
+}
+
+const typeIcons: Record<string, any> = {
+  film: Film,
+  "tv series": Tv,
+  commercial: Clapperboard,
+  "music video": ImageIcon,
+};
+
+interface EnrichedProject {
+  id: string;
+  name: string;
+  brand: string | null;
+  type: string;
+  status: string;
+  deadline: string | null;
+  created_at: string;
+  roles: {
+    id: string;
+    name: string;
+    brief: string | null;
+    packageCount: number;
+    talentCount: number;
+    pickCount: number;
+    mediaRequestedCount: number;
+    mediaUploadedCount: number;
+    agentIds: string[];
+    agentProfiles: Record<string, { full_name: string; agency_name: string | null }>;
+  }[];
+  requests: any[];
+  stats: {
+    roleCount: number;
+    totalTalent: number;
+    totalPicks: number;
+    totalMediaRequested: number;
+    totalMediaUploaded: number;
+    pendingRequests: number;
+    respondedRequests: number;
+    totalRequests: number;
+  };
+}
+
+export default function ProjectDashboard({ projects }: { projects: EnrichedProject[] }) {
+  const activeProjects = projects.filter((p) => p.status === "active" || p.status === "casting");
+  const totalTalent = projects.reduce((s, p) => s + p.stats.totalTalent, 0);
+  const totalPicks = projects.reduce((s, p) => s + p.stats.totalPicks, 0);
+  const pendingRequests = projects.reduce((s, p) => s + p.stats.pendingRequests, 0);
+  const overdueProjects = projects.filter((p) => p.deadline && daysUntil(p.deadline) < 0 && p.status !== "wrapped" && p.status !== "archived");
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-xl font-bold text-[#E8E3D8]">Dashboard</h1>
+        <Link
+          href="/client/projects/new"
+          className="inline-flex items-center justify-center rounded-lg bg-[#B8964C] px-4 py-2 text-sm font-semibold text-[#0F0F12] hover:bg-[#C9A64C] hover:shadow-lg hover:shadow-[#B8964C]/10 transition-all duration-300"
+        >
+          + New Project
+        </Link>
+      </div>
+
+      {/* Summary Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+        <StatCard icon={FolderKanban} label="Active Projects" value={activeProjects.length} />
+        <StatCard icon={Users} label="Total Talent" value={totalTalent} />
+        <StatCard icon={Star} label="Picks Made" value={totalPicks} accent />
+        <StatCard
+          icon={pendingRequests > 0 ? Clock : CheckCircle}
+          label="Pending Requests"
+          value={pendingRequests}
+          warning={pendingRequests > 0}
+        />
+      </div>
+
+      {/* Overdue alert */}
+      {overdueProjects.length > 0 && (
+        <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 mb-6 flex items-start gap-3">
+          <AlertTriangle size={18} className="text-red-400 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-red-400">
+              {overdueProjects.length} project{overdueProjects.length !== 1 ? "s" : ""} past deadline
+            </p>
+            <p className="text-xs text-red-400/70 mt-0.5">
+              {overdueProjects.map((p) => p.name).join(", ")}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {projects.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-24">
+          <div className="w-16 h-16 rounded-full bg-[#1E2128] flex items-center justify-center mb-4">
+            <FolderKanban size={28} className="text-[#8B8D93]" />
+          </div>
+          <h2 className="text-xl font-semibold text-[#E8E3D8] mb-2">No projects yet</h2>
+          <p className="text-[#8B8D93] mb-6 text-sm">Create your first project to start organizing talent.</p>
+          <Link
+            href="/client/projects/new"
+            className="inline-flex items-center justify-center rounded-lg bg-[#B8964C] px-4 py-2 text-sm font-semibold text-[#0F0F12] hover:bg-[#C9A64C] hover:shadow-lg hover:shadow-[#B8964C]/10 transition-all duration-300"
+          >
+            Create Project
+          </Link>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {projects.map((project) => (
+            <ProjectCard key={project.id} project={project} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  accent,
+  warning,
+}: {
+  icon: any;
+  label: string;
+  value: number;
+  accent?: boolean;
+  warning?: boolean;
+}) {
+  return (
+    <div className="rounded-xl border border-[#1E2128] bg-[#161920] p-4">
+      <div className="flex items-center gap-2 mb-2">
+        <Icon
+          size={16}
+          className={warning ? "text-amber-400" : accent ? "text-[#C9A84C]" : "text-[#8B8D93]"}
+        />
+        <span className="text-xs text-[#8B8D93]">{label}</span>
+      </div>
+      <p
+        className={`text-2xl font-bold ${
+          warning ? "text-amber-400" : accent ? "text-[#C9A84C]" : "text-[#E8E3D8]"
+        }`}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function ProjectCard({ project }: { project: EnrichedProject }) {
+  const dl = deadlineLabel(project.deadline);
+  const TypeIcon = typeIcons[project.type?.toLowerCase()] || Clapperboard;
+
+  const statusConfig: Record<string, { label: string; color: "green" | "gold" | "muted" | "red" }> = {
+    active: { label: "Active", color: "green" },
+    casting: { label: "Casting", color: "gold" },
+    wrapped: { label: "Wrapped", color: "muted" },
+    archived: { label: "Archived", color: "muted" },
+  };
+  const sc = statusConfig[project.status] || { label: project.status, color: "muted" as const };
+
+  return (
+    <Link
+      href={`/client/projects/${project.id}`}
+      className="block rounded-xl border border-[#1E2128] bg-[#161920] p-5 hover:border-[#2A2D35] transition group"
+    >
+      {/* Header */}
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-lg bg-[#1E2128] flex items-center justify-center shrink-0">
+            <TypeIcon size={18} className="text-[#8B8D93]" />
+          </div>
+          <div className="min-w-0">
+            <h3 className="font-semibold text-[#E8E3D8] truncate">{project.name}</h3>
+            {project.brand && (
+              <p className="text-xs text-[#8B8D93] truncate">{project.brand} &middot; {project.type}</p>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {dl && <span className={`text-xs font-medium ${dl.color}`}>{dl.text}</span>}
+          <Badge label={sc.label} color={sc.color} />
+          <ChevronRight size={16} className="text-[#8B8D93] group-hover:text-[#C9A84C] transition" />
+        </div>
+      </div>
+
+      {/* Role progress rows */}
+      {project.roles.length > 0 && (
+        <div className="space-y-2 mb-4">
+          {project.roles.map((role) => {
+            const progress = role.talentCount > 0 ? (role.pickCount / role.talentCount) * 100 : 0;
+            return (
+              <div key={role.id} className="flex items-center gap-3">
+                <span className="text-xs text-[#E8E3D8] w-28 truncate shrink-0">{role.name}</span>
+                {/* Progress bar */}
+                <div className="flex-1 h-1.5 rounded-full bg-[#1E2128] overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-[#C9A84C] to-[#B8943F] transition-all duration-500"
+                    style={{ width: `${Math.min(progress, 100)}%` }}
+                  />
+                </div>
+                <div className="flex items-center gap-2 text-[10px] text-[#8B8D93] shrink-0 w-32 justify-end">
+                  <span>{role.talentCount} talent</span>
+                  <span className="text-[#C9A84C]">{role.pickCount} picks</span>
+                  {role.agentIds.length > 0 && (
+                    <div className="flex -space-x-1">
+                      {role.agentIds.slice(0, 3).map((aid) => (
+                        <span
+                          key={aid}
+                          className="w-3 h-3 rounded-full border border-[#161920]"
+                          style={{ backgroundColor: agencyColor(aid) }}
+                          title={role.agentProfiles[aid]?.agency_name || role.agentProfiles[aid]?.full_name || ""}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Footer stats row */}
+      <div className="flex items-center justify-between pt-3 border-t border-[#1E2128]">
+        <div className="flex gap-4 text-xs text-[#8B8D93]">
+          <span className="flex items-center gap-1">
+            <Users size={12} />
+            {project.stats.totalTalent} talent
+          </span>
+          <span className="flex items-center gap-1">
+            <Star size={12} className="text-[#C9A84C]" />
+            {project.stats.totalPicks} picks
+          </span>
+          {project.stats.totalMediaRequested > 0 && (
+            <span className="flex items-center gap-1">
+              <ImageIcon size={12} />
+              {project.stats.totalMediaUploaded}/{project.stats.totalMediaRequested} media
+            </span>
+          )}
+        </div>
+        <div className="flex gap-3 text-xs">
+          {project.stats.totalRequests > 0 && (
+            <span className="flex items-center gap-1">
+              <Send size={11} className="text-[#8B8D93]" />
+              <span className="text-[#8B8D93]">
+                {project.stats.respondedRequests}/{project.stats.totalRequests} responded
+              </span>
+            </span>
+          )}
+        </div>
+      </div>
+    </Link>
+  );
+}

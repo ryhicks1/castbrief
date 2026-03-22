@@ -4,10 +4,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
-import { FolderKanban, Inbox, Menu, X } from "lucide-react";
+import { LayoutDashboard, FolderKanban, Inbox, Menu, X } from "lucide-react";
 
 const navItems = [
-  { href: "/client/projects", label: "Projects", icon: FolderKanban },
+  { href: "/client/projects", label: "Dashboard", icon: LayoutDashboard },
   { href: "/client/inbox", label: "Inbox", icon: Inbox },
 ];
 
