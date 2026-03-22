@@ -150,6 +150,32 @@ export default function RequestPackagePage() {
 
     if (rows.length > 0) {
       await supabase.from("package_requests").insert(rows);
+
+      // Send email notifications to each unique agent
+      const uniqueEmails = [...new Set(rows.map((r) => r.agent_email))];
+      const roleMap = new Map(roles.map((r) => [r.id, r.name]));
+
+      for (const agentEmail of uniqueEmails) {
+        const agentRows = rows.filter((r) => r.agent_email === agentEmail);
+        const roleNames = agentRows
+          .map((r) => (r.role_id ? roleMap.get(r.role_id) : null))
+          .filter(Boolean);
+
+        try {
+          await fetch("/api/email/send-package-request", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              agentEmail,
+              projectName,
+              roleName: roleNames.length > 0 ? roleNames.join(", ") : null,
+              brief: brief || null,
+            }),
+          });
+        } catch (e) {
+          console.error("Failed to send request email to:", agentEmail, e);
+        }
+      }
     }
 
     setLoading(false);

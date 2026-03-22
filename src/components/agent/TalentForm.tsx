@@ -266,7 +266,7 @@ export default function TalentForm({
 
     const talentData: Record<string, any> = {
       agent_id: agentId,
-      ...(orgId && !orgId.startsWith("__agent__") ? { org_id: orgId } : {}),
+      org_id: orgId && !orgId.startsWith("__agent__") ? orgId : null,
       full_name: form.full_name,
       age: form.age,
       location: form.location || null,
