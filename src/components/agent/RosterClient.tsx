@@ -360,6 +360,7 @@ export default function RosterClient({
                   </h3>
                   <button
                     onClick={resetInvite}
+                    aria-label="Close invite modal"
                     className="text-[#8B8D93] hover:text-[#E8E3D8] text-lg leading-none"
                   >
                     &times;
@@ -418,6 +419,7 @@ export default function RosterClient({
         <input
           type="text"
           placeholder="Search by name or tag..."
+          aria-label="Search talent by name or tag"
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           className="w-full max-w-md rounded-lg border border-[#1E2128] bg-[#0F0F12] px-3 py-2 text-sm text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#B8964C] focus:outline-none focus:ring-1 focus:ring-[#B8964C] transition-all duration-300"
@@ -481,6 +483,7 @@ export default function RosterClient({
                   type="checkbox"
                   checked={selected.has(talent.id)}
                   onChange={() => toggleSelect(talent.id)}
+                  aria-label={`Select ${talent.full_name}`}
                   className="sr-only"
                 />
                 {selected.has(talent.id) && (
@@ -566,6 +569,7 @@ export default function RosterClient({
               </h2>
               <button
                 onClick={resetBulkModal}
+                aria-label="Close bulk import modal"
                 className="rounded-lg p-1 text-[#8B8D93] hover:text-[#E8E3D8] hover:bg-[#1E2128] transition"
               >
                 <X size={18} />

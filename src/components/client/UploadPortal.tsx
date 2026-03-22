@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/ui";
 
 interface UploadPortalProps {
   token: string;
@@ -72,7 +73,7 @@ export default function UploadPortal({
                     href={uploadUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center w-full rounded-lg bg-gradient-to-r from-[#C9A84C] to-[#B8943F] px-6 py-3 text-sm font-semibold text-[#0D0F14] hover:from-[#D4B35C] hover:to-[#C9A84C] transition mb-4"
+                    className="flex items-center justify-center w-full rounded-lg bg-[#B8964C] px-6 py-3 text-sm font-semibold text-[#0F0F12] hover:bg-[#C9A64C] hover:shadow-lg hover:shadow-[#B8964C]/10 transition-all duration-300 mb-4"
                   >
                     Upload to Dropbox
                   </a>
@@ -94,13 +95,15 @@ export default function UploadPortal({
                 you&apos;re done.
               </p>
 
-              <button
+              <Button
+                variant="secondary"
+                size="lg"
                 onClick={handleConfirm}
-                disabled={confirming}
-                className="w-full rounded-lg bg-[#1E2128] border border-[#2A2D35] px-4 py-3 text-sm font-medium text-[#E8E3D8] hover:bg-[#262930] transition disabled:opacity-50"
+                loading={confirming}
+                className="w-full"
               >
                 {confirming ? "Confirming..." : "I've Finished Uploading"}
-              </button>
+              </Button>
             </>
           )}
         </div>

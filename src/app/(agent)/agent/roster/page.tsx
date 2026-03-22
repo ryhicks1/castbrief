@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import RosterClient from "@/components/agent/RosterClient";
 import { ensureOrg, orgFilter } from "@/lib/supabase/org";
 
+export const metadata = { title: "Roster — CastingBrief" };
+
 export default async function RosterPage() {
   const supabase = await createClient();
   const {

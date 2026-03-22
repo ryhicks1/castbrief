@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import DashboardClient from "@/components/agent/DashboardClient";
 import { ensureOrg, orgFilter } from "@/lib/supabase/org";
 
+export const metadata = { title: "Dashboard — CastingBrief" };
+
 export default async function DashboardPage() {
   const supabase = await createClient();
   const {

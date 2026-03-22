@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+export const metadata = { title: "Projects — CastingBrief" };
 
 function agencyColor(agentId: string): string {
   let hash = 0;
@@ -32,7 +33,7 @@ export default async function ProjectsPage() {
         <h1 className="text-xl font-bold text-[#E8E3D8]">Projects</h1>
         <Link
           href="/client/projects/new"
-          className="inline-flex items-center rounded-lg bg-gradient-to-r from-[#C9A84C] to-[#B8943F] px-4 py-2 text-sm font-semibold text-[#0D0F14] hover:from-[#D4B35C] hover:to-[#C9A84C] transition"
+          className="inline-flex items-center justify-center rounded-lg bg-[#B8964C] px-4 py-2 text-sm font-semibold text-[#0F0F12] hover:bg-[#C9A64C] hover:shadow-lg hover:shadow-[#B8964C]/10 transition-all duration-300"
         >
           + New Project
         </Link>
@@ -43,7 +44,10 @@ export default async function ProjectsPage() {
           <div className="text-5xl mb-4">&#9632;</div>
           <h2 className="text-xl font-semibold text-[#E8E3D8] mb-2">No projects yet</h2>
           <p className="text-[#8B8D93] mb-6 text-sm">Create your first project to start organizing talent.</p>
-          <Link href="/client/projects/new" className="inline-flex items-center rounded-lg bg-gradient-to-r from-[#C9A84C] to-[#B8943F] px-4 py-2 text-sm font-semibold text-[#0D0F14]">
+          <Link
+            href="/client/projects/new"
+            className="inline-flex items-center justify-center rounded-lg bg-[#B8964C] px-4 py-2 text-sm font-semibold text-[#0F0F12] hover:bg-[#C9A64C] hover:shadow-lg hover:shadow-[#B8964C]/10 transition-all duration-300"
+          >
             Create Project
           </Link>
         </div>

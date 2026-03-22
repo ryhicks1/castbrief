@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { MessageSquare, EyeOff } from "lucide-react";
 import { LOCATIONS } from "@/lib/constants/locations";
+import { Button } from "@/components/ui";
 
 function getLocationCode(location: string): string {
   const match = LOCATIONS.find(
@@ -221,13 +222,12 @@ export default function RoleDetail({
           <span className="text-sm text-[#E8E3D8]">
             {picks.length} talent selected
           </span>
-          <button
+          <Button
             onClick={handleRequestMedia}
-            disabled={mediaRequesting}
-            className="rounded-lg bg-gradient-to-r from-[#C9A84C] to-[#B8943F] px-6 py-2 text-sm font-semibold text-[#0D0F14] hover:from-[#D4B35C] hover:to-[#C9A84C] transition disabled:opacity-50"
+            loading={mediaRequesting}
           >
             {mediaRequesting ? "Requesting..." : `Request Media (${picks.length})`}
-          </button>
+          </Button>
         </div>
       )}
     </div>
@@ -391,6 +391,7 @@ function RoleTalentCard({
         <div className="flex items-center gap-1 pt-1.5 border-t border-[#1E2128]">
           <button
             onClick={onTogglePick}
+            aria-label={talent.client_pick ? "Deselect talent" : "Select talent"}
             className={`flex-1 rounded min-h-[28px] text-[10px] font-medium transition ${
               talent.client_pick
                 ? "bg-[#C9A84C] text-[#0D0F14]"
@@ -401,6 +402,7 @@ function RoleTalentCard({
           </button>
           <button
             onClick={() => setCommenting(true)}
+            aria-label="Add comment"
             className="rounded bg-[#1E2128] min-h-[28px] min-w-[28px] flex items-center justify-center text-[#8B8D93] hover:bg-[#262930] hover:text-[#E8E3D8] transition"
             title="Comment"
           >
@@ -408,6 +410,7 @@ function RoleTalentCard({
           </button>
           <button
             onClick={onHide}
+            aria-label="Hide talent"
             className="rounded bg-[#1E2128] min-h-[28px] min-w-[28px] flex items-center justify-center text-[#8B8D93] hover:bg-red-900/20 hover:text-red-400 transition"
             title="Hide"
           >

@@ -481,6 +481,7 @@ function TalentCard({
         <div className="flex items-center gap-1 pt-1.5 border-t border-[#1E2128]">
           <button
             onClick={() => onSetStatus("yes")}
+            aria-label="Mark as yes"
             className={`flex-1 rounded min-h-[28px] text-[10px] font-medium transition-all duration-200 ${
               talent.clientStatus === "yes"
                 ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
@@ -491,6 +492,7 @@ function TalentCard({
           </button>
           <button
             onClick={() => onSetStatus("no")}
+            aria-label="Mark as no"
             className={`flex-1 rounded min-h-[28px] text-[10px] font-medium transition-all duration-200 ${
               talent.clientStatus === "no"
                 ? "bg-red-500/10 text-red-400 hover:bg-red-500/20"
@@ -501,6 +503,7 @@ function TalentCard({
           </button>
           <button
             onClick={() => onSetStatus("maybe")}
+            aria-label="Mark as maybe"
             className={`flex-1 rounded min-h-[28px] text-[10px] font-medium transition-all duration-200 ${
               talent.clientStatus === "maybe"
                 ? "bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"
@@ -511,6 +514,7 @@ function TalentCard({
           </button>
           <button
             onClick={onStartComment}
+            aria-label="Add comment"
             className="rounded bg-[#1A1C22] min-h-[28px] min-w-[28px] flex items-center justify-center text-[#8B8D93] hover:bg-[#262930] hover:text-[#E8E3D8] transition"
             title="Comment"
           >
@@ -519,6 +523,7 @@ function TalentCard({
           {!talent.isHiddenByClient && (
             <button
               onClick={onHide}
+              aria-label="Hide talent"
               className="rounded bg-[#1A1C22] min-h-[28px] min-w-[28px] flex items-center justify-center text-[#8B8D93] hover:bg-red-900/20 hover:text-red-400 transition"
               title="Hide"
             >
@@ -533,6 +538,7 @@ function TalentCard({
             <button
               key={num}
               onClick={() => onSetRating(num)}
+              aria-label={`Rate ${num} out of 6`}
               className={`w-6 h-6 rounded-full text-[10px] font-semibold transition-all duration-200 ${
                 talent.clientRating === num
                   ? "bg-[#B8964C] text-[#0F0F12]"

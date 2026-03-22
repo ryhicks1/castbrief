@@ -78,6 +78,7 @@ export default function MultiSelect({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
         className={`flex w-full items-center justify-between rounded-lg border bg-[#1E2128] px-3 py-2 text-sm transition-all duration-300 ${
           open
             ? "border-[#B8964C] ring-1 ring-[#B8964C]"
@@ -103,7 +104,7 @@ export default function MultiSelect({
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-lg border border-[#2A2D35] bg-[#1E2128] py-1 shadow-xl">
+        <div role="listbox" className="absolute z-50 mt-1 w-full rounded-lg border border-[#2A2D35] bg-[#1E2128] py-1 shadow-xl">
           {options.length > 1 && (
             <>
               <label className="flex cursor-pointer items-center gap-2 px-3 py-1.5 hover:bg-[#262930] transition-colors">
@@ -124,6 +125,8 @@ export default function MultiSelect({
             {options.map((option) => (
               <label
                 key={option.value}
+                role="option"
+                aria-selected={selected.includes(option.value)}
                 className="flex cursor-pointer items-center gap-2 px-3 py-1.5 hover:bg-[#262930] transition-colors"
               >
                 <input

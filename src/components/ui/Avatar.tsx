@@ -38,6 +38,7 @@ export default function Avatar({
           alt={name}
           fill
           sizes="(max-width: 768px) 64px, 64px"
+          quality={80}
           className="object-cover photo-cinematic"
         />
       </div>
