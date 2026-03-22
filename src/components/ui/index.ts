@@ -6,3 +6,5 @@ export { TalentPhoto, InitialsAvatar } from "./Avatar";
 export { default as Badge } from "./Badge";
 export { default as MultiSelect } from "./MultiSelect";
 export { default as Pagination } from "./Pagination";
+export { default as KebabMenu } from "./KebabMenu";
+export type { KebabMenuItem } from "./KebabMenu";

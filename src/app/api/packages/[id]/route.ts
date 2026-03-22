@@ -30,7 +30,8 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { agent_notes, talent_updates } = body as {
+    const { name, agent_notes, talent_updates } = body as {
+      name?: string;
       agent_notes?: string;
       talent_updates?: Array<{
         id: string;
@@ -41,10 +42,14 @@ export async function PATCH(
     };
 
     // Update package-level fields
-    if (agent_notes !== undefined) {
+    const packageUpdates: Record<string, unknown> = {};
+    if (name !== undefined) packageUpdates.name = name;
+    if (agent_notes !== undefined) packageUpdates.agent_notes = agent_notes;
+
+    if (Object.keys(packageUpdates).length > 0) {
       await supabase
         .from("packages")
-        .update({ agent_notes })
+        .update(packageUpdates)
         .eq("id", packageId);
     }
 
@@ -65,6 +70,46 @@ export async function PATCH(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Package PATCH error:", error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: packageId } = await params;
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Verify ownership
+    const { data: pkg } = await supabase
+      .from("packages")
+      .select("id")
+      .eq("id", packageId)
+      .eq("agent_id", user.id)
+      .single();
+
+    if (!pkg) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    // Delete related rows first
+    await supabase.from("package_talents").delete().eq("package_id", packageId);
+    await supabase.from("role_packages").delete().eq("package_id", packageId);
+    await supabase.from("packages").delete().eq("id", packageId);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Package DELETE error:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

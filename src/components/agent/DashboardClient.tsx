@@ -2,8 +2,19 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Button, Avatar, Badge } from "@/components/ui";
-import { ChevronRight, PackagePlus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Button, Avatar, Badge, KebabMenu } from "@/components/ui";
+import type { KebabMenuItem } from "@/components/ui";
+import {
+  ChevronRight,
+  PackagePlus,
+  Pencil,
+  Copy,
+  Link2,
+  Trash2,
+  MessageSquare,
+  Users,
+} from "lucide-react";
 
 interface PackageTalent {
   id: string;
@@ -57,10 +68,24 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function DashboardClient({
-  packages,
+  packages: initialPackages,
   stats,
 }: DashboardClientProps) {
+  const router = useRouter();
+  const [packages, setPackages] = useState(initialPackages);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [messagingId, setMessagingId] = useState<string | null>(null);
+  const [messageContent, setMessageContent] = useState("");
+  const [messageSending, setMessageSending] = useState(false);
+  const [copyTalentId, setCopyTalentId] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  function showToast(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
+  }
 
   function toggleExpand(id: string) {
     setExpanded((prev) => {
@@ -69,6 +94,116 @@ export default function DashboardClient({
       else next.add(id);
       return next;
     });
+  }
+
+  async function handleRename(pkgId: string) {
+    if (!renameValue.trim()) {
+      setRenamingId(null);
+      return;
+    }
+    await fetch(`/api/packages/${pkgId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: renameValue.trim() }),
+    });
+    setPackages((prev) =>
+      prev.map((p) => (p.id === pkgId ? { ...p, name: renameValue.trim() } : p))
+    );
+    setRenamingId(null);
+    showToast("Package renamed");
+  }
+
+  function handleCopyLink(token: string) {
+    navigator.clipboard.writeText(`${window.location.origin}/p/${token}`);
+    showToast("Link copied to clipboard");
+  }
+
+  async function handleDuplicate(pkgId: string) {
+    const res = await fetch(`/api/packages/${pkgId}/copy`, { method: "POST" });
+    if (res.ok) {
+      showToast("Package duplicated");
+      router.refresh();
+    }
+  }
+
+  async function handleDelete(pkgId: string, pkgName: string) {
+    if (!confirm(`Delete "${pkgName}"? This cannot be undone.`)) return;
+    const res = await fetch(`/api/packages/${pkgId}`, { method: "DELETE" });
+    if (res.ok) {
+      setPackages((prev) => prev.filter((p) => p.id !== pkgId));
+      showToast("Package deleted");
+    }
+  }
+
+  async function handleSendMessage(pkgId: string) {
+    if (!messageContent.trim()) return;
+    setMessageSending(true);
+    await fetch("/api/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ package_id: pkgId, content: messageContent.trim() }),
+    });
+    setMessageSending(false);
+    setMessagingId(null);
+    setMessageContent("");
+    showToast("Message sent to all talent");
+  }
+
+  async function handleCopyTalent(sourceId: string, targetId: string) {
+    const res = await fetch(`/api/packages/${sourceId}/copy-talent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ targetPackageId: targetId }),
+    });
+    const data = await res.json();
+    setCopyTalentId(null);
+    if (data.copied > 0) {
+      showToast(`${data.copied} talent copied`);
+    } else {
+      showToast(data.message || "No talent to copy");
+    }
+  }
+
+  function getMenuItems(pkg: Package): KebabMenuItem[] {
+    return [
+      {
+        label: "Rename",
+        icon: <Pencil size={14} />,
+        onClick: () => {
+          setRenameValue(pkg.name);
+          setRenamingId(pkg.id);
+        },
+      },
+      {
+        label: "Copy Link",
+        icon: <Link2 size={14} />,
+        onClick: () => handleCopyLink(pkg.token),
+      },
+      {
+        label: "Duplicate",
+        icon: <Copy size={14} />,
+        onClick: () => handleDuplicate(pkg.id),
+      },
+      {
+        label: "Copy Talent to...",
+        icon: <Users size={14} />,
+        onClick: () => setCopyTalentId(pkg.id),
+      },
+      {
+        label: "Message All Talent",
+        icon: <MessageSquare size={14} />,
+        onClick: () => {
+          setMessagingId(pkg.id);
+          setMessageContent("");
+        },
+      },
+      {
+        label: "Delete",
+        icon: <Trash2 size={14} />,
+        danger: true,
+        onClick: () => handleDelete(pkg.id, pkg.name),
+      },
+    ];
   }
 
   if (packages.length === 0) {
@@ -92,6 +227,42 @@ export default function DashboardClient({
 
   return (
     <div>
+      {/* Toast */}
+      {toast && (
+        <div className="fixed top-4 right-4 z-50 rounded-lg bg-[#1E2128] border border-[#2A2D35] px-4 py-2.5 text-sm text-[#E8E3D8] shadow-xl shadow-black/40 animate-[fade-in_0.2s_ease-out]">
+          {toast}
+        </div>
+      )}
+
+      {/* Copy Talent Modal */}
+      {copyTalentId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="rounded-xl border border-[#1E2128] bg-[#13151A] p-6 w-full max-w-sm shadow-2xl">
+            <h3 className="text-sm font-semibold text-[#E8E3D8] mb-4">Copy talent to which package?</h3>
+            <div className="space-y-1 max-h-64 overflow-y-auto">
+              {packages
+                .filter((p) => p.id !== copyTalentId)
+                .map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => handleCopyTalent(copyTalentId, p.id)}
+                    className="flex items-center w-full px-3 py-2 rounded-lg text-sm text-[#E8E3D8] hover:bg-[#1E2128] transition text-left"
+                  >
+                    <span className="truncate flex-1">{p.name}</span>
+                    <span className="text-xs text-[#8B8D93] ml-2">{p.package_talents.length} talent</span>
+                  </button>
+                ))}
+            </div>
+            <button
+              onClick={() => setCopyTalentId(null)}
+              className="mt-4 w-full rounded-lg bg-[#1E2128] px-3 py-2 text-sm text-[#8B8D93] hover:text-[#E8E3D8] transition"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-bold text-[#E8E3D8]">Dashboard</h1>
         <Link href="/agent/packages/new">
@@ -121,22 +292,37 @@ export default function DashboardClient({
           return (
             <div
               key={pkg.id}
-              className="rounded-xl bg-[#13151A] shadow-lg shadow-black/20 overflow-hidden"
+              className="rounded-xl bg-[#13151A] shadow-lg shadow-black/20"
             >
               {/* Collapsed row */}
-              <button
-                onClick={() => toggleExpand(pkg.id)}
-                className="flex items-center w-full px-4 py-3 text-left hover:bg-[#1E2128] transition"
-              >
-                <div className="flex-1 min-w-0">
+              <div className="flex items-center w-full px-4 py-3 hover:bg-[#1E2128]/50 transition">
+                <button
+                  onClick={() => toggleExpand(pkg.id)}
+                  className="flex-1 min-w-0 text-left"
+                >
                   <div className="flex items-center gap-2">
-                    <Link
-                      href={`/agent/packages/${pkg.id}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="font-medium text-[#E8E3D8] truncate hover:text-[#B8964C] transition-colors"
-                    >
-                      {pkg.name}
-                    </Link>
+                    {renamingId === pkg.id ? (
+                      <input
+                        autoFocus
+                        value={renameValue}
+                        onChange={(e) => setRenameValue(e.target.value)}
+                        onBlur={() => handleRename(pkg.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleRename(pkg.id);
+                          if (e.key === "Escape") setRenamingId(null);
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-[#1E2128] border border-[#C9A84C] rounded px-2 py-0.5 text-sm text-[#E8E3D8] focus:outline-none w-48"
+                      />
+                    ) : (
+                      <Link
+                        href={`/agent/packages/${pkg.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="font-medium text-[#E8E3D8] truncate hover:text-[#B8964C] transition-colors"
+                      >
+                        {pkg.name}
+                      </Link>
+                    )}
                     <Badge
                       label={statusLabels[pkg.status] || pkg.status}
                       color={statusColors[pkg.status] || "muted"}
@@ -147,14 +333,60 @@ export default function DashboardClient({
                     {talentCount} talent ·{" "}
                     {new Date(pkg.created_at).toLocaleDateString()}
                   </div>
+                </button>
+
+                <div className="flex items-center gap-1 shrink-0">
+                  <KebabMenu items={getMenuItems(pkg)} />
+                  <button
+                    onClick={() => toggleExpand(pkg.id)}
+                    className="p-1.5 text-[#8B8D93] hover:text-[#E8E3D8] transition"
+                  >
+                    <ChevronRight
+                      size={16}
+                      className={`transition-transform duration-300 ${
+                        isExpanded ? "rotate-90" : ""
+                      }`}
+                    />
+                  </button>
                 </div>
-                <ChevronRight
-                  size={16}
-                  className={`text-[#8B8D93] transition-transform duration-300 ${
-                    isExpanded ? "rotate-90" : ""
-                  }`}
-                />
-              </button>
+              </div>
+
+              {/* Message input */}
+              {messagingId === pkg.id && (
+                <div className="border-t border-[#1E2128] px-4 py-3">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-[#8B8D93] mb-2">
+                    Message All Talent
+                  </div>
+                  <textarea
+                    autoFocus
+                    value={messageContent}
+                    onChange={(e) => setMessageContent(e.target.value)}
+                    rows={3}
+                    placeholder="Type your message..."
+                    className="w-full rounded-lg border border-[#2A2D35] bg-[#0F0F12] px-3 py-2 text-sm text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#C9A84C] focus:outline-none resize-none"
+                  />
+                  <div className="flex gap-2 mt-2">
+                    <Button
+                      size="sm"
+                      onClick={() => handleSendMessage(pkg.id)}
+                      loading={messageSending}
+                      disabled={!messageContent.trim()}
+                    >
+                      Send to {talentCount} talent
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setMessagingId(null);
+                        setMessageContent("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {/* Expanded */}
               {isExpanded && (
@@ -232,9 +464,7 @@ export default function DashboardClient({
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigator.clipboard.writeText(
-                                  `${window.location.origin}/p/${pkg.token}`
-                                );
+                                handleCopyLink(pkg.token);
                               }}
                               className="text-xs text-[#8B8D93] hover:text-[#E8E3D8]"
                             >
