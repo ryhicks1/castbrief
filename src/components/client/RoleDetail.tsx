@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { MessageSquare, EyeOff } from "lucide-react";
+import { MessageSquare, EyeOff, FileDown, FileSpreadsheet } from "lucide-react";
 import { LOCATIONS } from "@/lib/constants/locations";
 import { Button } from "@/components/ui";
 
@@ -156,11 +156,33 @@ export default function RoleDetail({
       </div>
 
       {/* Role header */}
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-[#E8E3D8]">{role.name}</h1>
-        {role.brief && (
-          <p className="text-sm text-[#8B8D93] mt-1">{role.brief}</p>
-        )}
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-[#E8E3D8]">{role.name}</h1>
+          {role.brief && (
+            <p className="text-sm text-[#8B8D93] mt-1">{role.brief}</p>
+          )}
+        </div>
+        <div className="flex gap-2 shrink-0">
+          <a
+            href={`/api/reports/role/${role.id}?format=pdf&projectId=${projectId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#1E2128] px-3 py-1.5 text-xs text-[#E8E3D8] hover:bg-[#262930] transition"
+          >
+            <FileDown size={13} />
+            PDF
+          </a>
+          <a
+            href={`/api/reports/role/${role.id}?format=csv&projectId=${projectId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#1E2128] px-3 py-1.5 text-xs text-[#E8E3D8] hover:bg-[#262930] transition"
+          >
+            <FileSpreadsheet size={13} />
+            CSV
+          </a>
+        </div>
       </div>
 
       {/* Agency legend */}

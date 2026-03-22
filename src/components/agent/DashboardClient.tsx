@@ -13,6 +13,8 @@ import {
   Link2,
   Trash2,
   MessageSquare,
+  FileDown,
+  FileSpreadsheet,
   Users,
 } from "lucide-react";
 
@@ -149,6 +151,10 @@ export default function DashboardClient({
     showToast("Message sent to all talent");
   }
 
+  function handleExport(pkgId: string, format: "pdf" | "csv") {
+    window.open(`/api/reports/package/${pkgId}?format=${format}`, "_blank");
+  }
+
   async function handleCopyTalent(sourceId: string, targetId: string) {
     const res = await fetch(`/api/packages/${sourceId}/copy-talent`, {
       method: "POST",
@@ -196,6 +202,16 @@ export default function DashboardClient({
           setMessagingId(pkg.id);
           setMessageContent("");
         },
+      },
+      {
+        label: "Export PDF",
+        icon: <FileDown size={14} />,
+        onClick: () => handleExport(pkg.id, "pdf"),
+      },
+      {
+        label: "Export CSV",
+        icon: <FileSpreadsheet size={14} />,
+        onClick: () => handleExport(pkg.id, "csv"),
       },
       {
         label: "Delete",

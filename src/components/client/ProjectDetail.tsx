@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Image as ImageIcon,
   Calendar,
+  FileDown,
 } from "lucide-react";
 
 function agencyColor(agentId: string): string {
@@ -262,13 +263,26 @@ export default function ProjectDetail({ project, userId, requests = [] }: Projec
                     </p>
                   )}
                 </div>
-                <Link
-                  href={`/client/projects/${project.id}/roles/${role.id}`}
-                  className="flex items-center gap-1 text-xs text-[#C9A84C] hover:underline shrink-0"
-                >
-                  Review Talent
-                  <ChevronRight size={12} />
-                </Link>
+                <div className="flex items-center gap-2 shrink-0">
+                  {talentCount > 0 && (
+                    <a
+                      href={`/api/reports/role/${role.id}?format=pdf&projectId=${project.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs text-[#8B8D93] hover:text-[#E8E3D8] transition"
+                      title="Export PDF"
+                    >
+                      <FileDown size={12} />
+                    </a>
+                  )}
+                  <Link
+                    href={`/client/projects/${project.id}/roles/${role.id}`}
+                    className="flex items-center gap-1 text-xs text-[#C9A84C] hover:underline"
+                  >
+                    Review Talent
+                    <ChevronRight size={12} />
+                  </Link>
+                </div>
               </div>
 
               {/* Progress bar */}
