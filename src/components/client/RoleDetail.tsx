@@ -1,7 +1,18 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Image from "next/image";
 import Link from "next/link";
+import { MessageSquare, EyeOff } from "lucide-react";
+import { LOCATIONS } from "@/lib/constants/locations";
+
+function getLocationCode(location: string): string {
+  const match = LOCATIONS.find(
+    (loc) => loc.city.toLowerCase() === location.toLowerCase()
+  );
+  if (match) return match.code;
+  return location.slice(0, 3).toUpperCase();
+}
 
 function agencyColor(agentId: string): string {
   let hash = 0;
@@ -183,7 +194,7 @@ export default function RoleDetail({
             >
               {label}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {(groupTalents as any[])
                 .filter((t) => !t.is_hidden_by_client)
                 .map((t) => (
@@ -252,113 +263,156 @@ function RoleTalentCard({
 
   return (
     <div
-      className={`rounded-xl border p-3 transition-all ${
+      className={`group rounded-xl overflow-hidden shadow-lg shadow-black/20 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/30 transition-all duration-300 ${
         talent.client_pick
-          ? "border-[#C9A84C]/50 bg-[#C9A84C]/5"
-          : "border-[#1E2128] bg-[#161920]"
-      }`}
+          ? "ring-1 ring-[#C9A84C]/50"
+          : ""
+      } bg-[#13151A]`}
     >
-      <div className="flex gap-2 mb-2">
-        <div
-          className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-xs font-semibold"
-          style={{
-            background: "linear-gradient(135deg, #C9A84C, #8B6D1A)",
-            color: "#0D0F14",
-          }}
-        >
-          {initials}
-        </div>
-        <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-sm text-[#E8E3D8] truncate">
-            {t.full_name}
-          </h3>
-          <div className="flex flex-wrap gap-x-2 text-[10px] text-[#8B8D93]">
-            {t.age && <span>Age {t.age}</span>}
-            {t.location && <span>{t.location}</span>}
-            {t.cultural_background && <span>{t.cultural_background}</span>}
-          </div>
-        </div>
-      </div>
-
-      {chips.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-2">
-          {chips.map((chip: any) => (
+      {/* Photo area -- 3:4 aspect ratio */}
+      <div className="relative" style={{ aspectRatio: "3/4" }}>
+        {t.photo_url ? (
+          <Image
+            src={t.photo_url}
+            alt={t.full_name || "Talent"}
+            fill
+            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div
+            className="absolute inset-0 flex items-center justify-center"
+            style={{
+              background: "linear-gradient(160deg, #1E2128 0%, #2A2D35 100%)",
+            }}
+          >
             <span
-              key={chip.id}
-              className="rounded-full px-1.5 py-0.5 text-[9px] font-medium"
+              className="text-4xl font-bold"
               style={{
-                backgroundColor: `${chip.color}20`,
-                color: chip.color,
+                background: "linear-gradient(135deg, #C9A84C, #8B6D1A)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
               }}
             >
-              {chip.label}
+              {initials}
             </span>
-          ))}
-        </div>
-      )}
+          </div>
+        )}
 
-      {activeLinks.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-2">
-          {activeLinks.map(([key, url]) => (
-            <a
-              key={key}
-              href={(url as string).startsWith("http") ? (url as string) : `https://${url}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded bg-[#1E2128] px-1 py-0.5 text-[9px] text-[#8B8D93] hover:text-[#C9A84C] transition"
-            >
-              {linkLabels[key] || key}
-            </a>
-          ))}
+        {/* Name / age / location overlay */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-2 pb-2 pt-8">
+          <p className="text-sm font-semibold text-white truncate">
+            {t.full_name}
+          </p>
+          <p className="text-xs text-white/70">
+            {t.age ? `${t.age}` : ""}
+            {t.location ? ` \u00B7 ${getLocationCode(t.location)}` : ""}
+          </p>
         </div>
-      )}
 
-      {talent.client_comment && !commenting && (
-        <div className="mb-2 rounded bg-[#0D0F14] px-2 py-1 text-[10px] text-[#8B8D93]">
-          &#128172; {talent.client_comment}
+        {/* Selected badge on photo top-right */}
+        {talent.client_pick && (
+          <div className="absolute top-2 right-2 rounded-full bg-[#C9A84C] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#0D0F14]">
+            Selected
+          </div>
+        )}
+      </div>
+
+      {/* Card body */}
+      <div className="p-2">
+        {/* Chips */}
+        {chips.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-1.5">
+            {chips.slice(0, 3).map((chip: any) => (
+              <span
+                key={chip.id}
+                className="rounded-full px-1.5 py-0.5 text-[9px] font-medium"
+                style={{
+                  backgroundColor: `${chip.color}20`,
+                  color: chip.color,
+                }}
+              >
+                {chip.label}
+              </span>
+            ))}
+            {chips.length > 3 && (
+              <span className="text-[9px] text-[#8B8D93] self-center">
+                +{chips.length - 3}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* External links */}
+        {activeLinks.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-1.5">
+            {activeLinks.map(([key, url]) => (
+              <a
+                key={key}
+                href={(url as string).startsWith("http") ? (url as string) : `https://${url}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded bg-[#1E2128] px-1.5 py-0.5 text-[9px] font-medium text-[#8B8D93] hover:text-[#C9A84C] hover:bg-[#C9A84C]/10 transition"
+              >
+                {linkLabels[key] || key}
+              </a>
+            ))}
+          </div>
+        )}
+
+        {/* Existing comment */}
+        {talent.client_comment && !commenting && (
+          <div className="mb-1.5 rounded bg-[#0D0F14] px-2 py-1 text-[10px] text-[#8B8D93] flex items-start gap-1">
+            <MessageSquare size={10} className="shrink-0 mt-0.5" />
+            <span className="line-clamp-2">{talent.client_comment}</span>
+          </div>
+        )}
+
+        {/* Comment input */}
+        {commenting && (
+          <div className="mb-1.5">
+            <textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              rows={2}
+              autoFocus
+              onBlur={() => {
+                onSaveComment(comment);
+                setCommenting(false);
+              }}
+              className="w-full rounded border border-[#2A2D35] bg-[#0D0F14] px-2 py-1 text-[10px] text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#C9A84C] focus:outline-none resize-none"
+              placeholder="Leave a comment..."
+            />
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-1 pt-1.5 border-t border-[#1E2128]">
+          <button
+            onClick={onTogglePick}
+            className={`flex-1 rounded min-h-[28px] text-[10px] font-medium transition ${
+              talent.client_pick
+                ? "bg-[#C9A84C] text-[#0D0F14]"
+                : "bg-[#1E2128] text-[#E8E3D8] hover:bg-[#262930]"
+            }`}
+          >
+            {talent.client_pick ? "\u2713 Selected" : "Select"}
+          </button>
+          <button
+            onClick={() => setCommenting(true)}
+            className="rounded bg-[#1E2128] min-h-[28px] min-w-[28px] flex items-center justify-center text-[#8B8D93] hover:bg-[#262930] hover:text-[#E8E3D8] transition"
+            title="Comment"
+          >
+            <MessageSquare size={11} />
+          </button>
+          <button
+            onClick={onHide}
+            className="rounded bg-[#1E2128] min-h-[28px] min-w-[28px] flex items-center justify-center text-[#8B8D93] hover:bg-red-900/20 hover:text-red-400 transition"
+            title="Hide"
+          >
+            <EyeOff size={11} />
+          </button>
         </div>
-      )}
-
-      {commenting && (
-        <div className="mb-2">
-          <textarea
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            rows={2}
-            autoFocus
-            onBlur={() => {
-              onSaveComment(comment);
-              setCommenting(false);
-            }}
-            className="w-full rounded border border-[#2A2D35] bg-[#0D0F14] px-2 py-1 text-[10px] text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#C9A84C] focus:outline-none resize-none"
-            placeholder="Leave a comment..."
-          />
-        </div>
-      )}
-
-      <div className="flex items-center gap-1 pt-2 border-t border-[#1E2128]">
-        <button
-          onClick={onTogglePick}
-          className={`flex-1 rounded px-2 py-1 text-[10px] font-medium transition ${
-            talent.client_pick
-              ? "bg-[#C9A84C] text-[#0D0F14]"
-              : "bg-[#1E2128] text-[#E8E3D8] hover:bg-[#262930]"
-          }`}
-        >
-          {talent.client_pick ? "\u2713 Selected" : "Select"}
-        </button>
-        <button
-          onClick={() => setCommenting(true)}
-          className="rounded bg-[#1E2128] px-2 py-1 text-[10px] text-[#E8E3D8] hover:bg-[#262930] transition"
-        >
-          &#128172;
-        </button>
-        <button
-          onClick={onHide}
-          className="rounded bg-[#1E2128] px-2 py-1 text-[10px] text-[#E8E3D8] hover:bg-red-900/20 hover:text-red-400 transition"
-        >
-          &#128683;
-        </button>
       </div>
     </div>
   );

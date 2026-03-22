@@ -3,6 +3,15 @@
 import { useState, useCallback } from "react";
 import Image from "next/image";
 import { MessageSquare, EyeOff } from "lucide-react";
+import { LOCATIONS } from "@/lib/constants/locations";
+
+function getLocationCode(location: string): string {
+  const match = LOCATIONS.find(
+    (loc) => loc.city.toLowerCase() === location.toLowerCase()
+  );
+  if (match) return match.code;
+  return location.slice(0, 3).toUpperCase();
+}
 
 interface TalentChip {
   id: string;
@@ -159,7 +168,7 @@ export default function PackageView({
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 sm:px-6">
+    <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6">
       {/* Header */}
       <div className="mb-8">
         <p className="text-xs font-semibold uppercase tracking-widest text-[#B8964C] mb-2">
@@ -218,7 +227,7 @@ export default function PackageView({
       )}
 
       {/* Talent grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {visibleTalents.map((talent) => (
           <TalentCard
             key={talent.packageTalentId}
@@ -318,14 +327,14 @@ function TalentCard({
         talent.isHiddenByClient ? "opacity-50" : ""
       } bg-[#13151A]`}
     >
-      {/* Photo area -- 4:5 aspect ratio headshot */}
-      <div className="relative" style={{ aspectRatio: "4/5" }}>
+      {/* Photo area -- 3:4 aspect ratio headshot */}
+      <div className="relative" style={{ aspectRatio: "3/4" }}>
         {talent.photo_url ? (
           <Image
             src={talent.photo_url}
             alt={talent.full_name}
             fill
-            sizes="(max-width: 768px) 100vw, 50vw"
+            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
             className="object-cover photo-cinematic transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
@@ -336,7 +345,7 @@ function TalentCard({
             }}
           >
             <span
-              className="text-5xl font-bold"
+              className="text-4xl font-bold"
               style={{
                 background: "linear-gradient(135deg, #B8964C, #8B6D1A)",
                 WebkitBackgroundClip: "text",
@@ -353,55 +362,46 @@ function TalentCard({
           </div>
         )}
 
-        {/* Name overlay at bottom of photo */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-3 pb-2 pt-8">
-          <h3 className="font-[family-name:var(--font-display)] text-sm text-white leading-tight">
+        {/* Name / age / location overlay at bottom of photo */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-2 pb-2 pt-8">
+          <p className="text-sm font-semibold text-white truncate">
             {talent.full_name}
-          </h3>
+          </p>
+          <p className="text-xs text-white/70">
+            {talent.age ? `${talent.age}` : ""}
+            {talent.location ? ` \u00B7 ${getLocationCode(talent.location)}` : ""}
+          </p>
         </div>
 
         {/* Rating badge on photo top-left */}
         {talent.clientRating != null && (
-          <div className="absolute top-3 left-3 w-7 h-7 rounded-full bg-[#B8964C] flex items-center justify-center text-xs font-bold text-[#0F0F12]">
+          <div className="absolute top-2 left-2 w-6 h-6 rounded-full bg-[#B8964C] flex items-center justify-center text-[10px] font-bold text-[#0F0F12]">
             {talent.clientRating}
           </div>
         )}
 
         {/* Status badge on photo top-right */}
         {talent.clientStatus === "yes" && (
-          <div className="absolute top-3 right-3 rounded-full bg-emerald-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+          <div className="absolute top-2 right-2 rounded-full bg-emerald-500 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
             Yes
           </div>
         )}
         {talent.clientStatus === "maybe" && (
-          <div className="absolute top-3 right-3 rounded-full bg-amber-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+          <div className="absolute top-2 right-2 rounded-full bg-amber-500 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
             Maybe
           </div>
         )}
       </div>
 
       {/* Card body */}
-      <div className="p-3">
-        {/* Compact metadata line: age . location . background . height */}
-        <div className="text-xs text-[#8B8D93] truncate mb-2">
-          {[
-            talent.age ? `${talent.age}` : null,
-            talent.location,
-            talent.cultural_background,
-            talent.height_cm ? `${talent.height_cm}cm` : null,
-            talent.weight_kg ? `${talent.weight_kg}kg` : null,
-          ]
-            .filter(Boolean)
-            .join(" \u00B7 ")}
-        </div>
-
+      <div className="p-2">
         {/* Chips -- max 3 */}
         {talent.chips.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-2">
+          <div className="flex flex-wrap gap-1 mb-1.5">
             {talent.chips.slice(0, 3).map((chip) => (
               <span
                 key={chip.id}
-                className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+                className="rounded-full px-1.5 py-0.5 text-[9px] font-medium"
                 style={{
                   backgroundColor: `${chip.color}20`,
                   color: chip.color,
@@ -411,7 +411,7 @@ function TalentCard({
               </span>
             ))}
             {talent.chips.length > 3 && (
-              <span className="text-[10px] text-[#8B8D93] self-center">
+              <span className="text-[9px] text-[#8B8D93] self-center">
                 +{talent.chips.length - 3}
               </span>
             )}
@@ -420,14 +420,14 @@ function TalentCard({
 
         {/* External links */}
         {activeLinks.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-3">
+          <div className="flex flex-wrap gap-1 mb-1.5">
             {activeLinks.map(([key, url]) => (
               <a
                 key={key}
                 href={url.startsWith("http") ? url : `https://${url}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded bg-[#1E2128] px-1.5 py-0.5 text-[10px] font-medium text-[#8B8D93] hover:text-[#B8964C] hover:bg-[#B8964C]/10 transition"
+                className="rounded bg-[#1E2128] px-1.5 py-0.5 text-[9px] font-medium text-[#8B8D93] hover:text-[#B8964C] hover:bg-[#B8964C]/10 transition"
               >
                 {linkLabels[key] || key}
               </a>
@@ -437,33 +437,33 @@ function TalentCard({
 
         {/* Existing comment */}
         {talent.clientComment && !isCommenting && (
-          <div className="mb-3 rounded-lg bg-[#0F0F12] px-3 py-2 text-xs text-[#8B8D93] flex items-start gap-1.5">
-            <MessageSquare size={14} className="shrink-0 mt-0.5" />
-            <span>{talent.clientComment}</span>
+          <div className="mb-1.5 rounded bg-[#0F0F12] px-2 py-1 text-[10px] text-[#8B8D93] flex items-start gap-1">
+            <MessageSquare size={10} className="shrink-0 mt-0.5" />
+            <span className="line-clamp-2">{talent.clientComment}</span>
           </div>
         )}
 
         {/* Comment input */}
         {isCommenting && (
-          <div className="mb-3">
+          <div className="mb-1.5">
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="Leave a comment..."
               rows={2}
               autoFocus
-              className="w-full rounded-lg border border-[#1E2128] bg-[#0F0F12] px-3 py-2 text-xs text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#B8964C] focus:outline-none resize-none"
+              className="w-full rounded border border-[#1E2128] bg-[#0F0F12] px-2 py-1 text-[10px] text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#B8964C] focus:outline-none resize-none"
             />
-            <div className="flex gap-2 mt-1">
+            <div className="flex gap-2 mt-0.5">
               <button
                 onClick={() => onSaveComment(comment)}
-                className="text-xs text-[#B8964C] hover:underline"
+                className="text-[10px] text-[#B8964C] hover:underline"
               >
                 Save
               </button>
               <button
                 onClick={onCancelComment}
-                className="text-xs text-[#8B8D93] hover:underline"
+                className="text-[10px] text-[#8B8D93] hover:underline"
               >
                 Cancel
               </button>
@@ -471,63 +471,63 @@ function TalentCard({
           </div>
         )}
 
-        {/* Status buttons row */}
-        <div className="flex items-center gap-1.5 pt-2 border-t border-[#1E2128]">
+        {/* Status buttons row — icon-only on small cards */}
+        <div className="flex items-center gap-1 pt-1.5 border-t border-[#1E2128]">
           <button
             onClick={() => onSetStatus("yes")}
-            className={`flex-1 rounded-lg min-h-[36px] text-sm font-medium transition-all duration-200 ${
+            className={`flex-1 rounded min-h-[28px] text-[10px] font-medium transition-all duration-200 ${
               talent.clientStatus === "yes"
                 ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
                 : "bg-[#1A1C22] text-[#8B8D93] hover:bg-[#262930]"
             }`}
           >
-            &#10003; Yes
+            &#10003;
           </button>
           <button
             onClick={() => onSetStatus("no")}
-            className={`flex-1 rounded-lg min-h-[36px] text-sm font-medium transition-all duration-200 ${
+            className={`flex-1 rounded min-h-[28px] text-[10px] font-medium transition-all duration-200 ${
               talent.clientStatus === "no"
                 ? "bg-red-500/10 text-red-400 hover:bg-red-500/20"
                 : "bg-[#1A1C22] text-[#8B8D93] hover:bg-[#262930]"
             }`}
           >
-            &#10007; No
+            &#10007;
           </button>
           <button
             onClick={() => onSetStatus("maybe")}
-            className={`flex-1 rounded-lg min-h-[36px] text-sm font-medium transition-all duration-200 ${
+            className={`flex-1 rounded min-h-[28px] text-[10px] font-medium transition-all duration-200 ${
               talent.clientStatus === "maybe"
                 ? "bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"
                 : "bg-[#1A1C22] text-[#8B8D93] hover:bg-[#262930]"
             }`}
           >
-            ? Maybe
+            ?
           </button>
           <button
             onClick={onStartComment}
-            className="rounded-lg bg-[#1A1C22] min-h-[36px] min-w-[36px] flex items-center justify-center text-sm text-[#8B8D93] hover:bg-[#262930] hover:text-[#E8E3D8] transition"
+            className="rounded bg-[#1A1C22] min-h-[28px] min-w-[28px] flex items-center justify-center text-[#8B8D93] hover:bg-[#262930] hover:text-[#E8E3D8] transition"
             title="Comment"
           >
-            <MessageSquare size={14} />
+            <MessageSquare size={11} />
           </button>
           {!talent.isHiddenByClient && (
             <button
               onClick={onHide}
-              className="rounded-lg bg-[#1A1C22] min-h-[36px] min-w-[36px] flex items-center justify-center text-sm text-[#8B8D93] hover:bg-red-900/20 hover:text-red-400 transition"
+              className="rounded bg-[#1A1C22] min-h-[28px] min-w-[28px] flex items-center justify-center text-[#8B8D93] hover:bg-red-900/20 hover:text-red-400 transition"
               title="Hide"
             >
-              <EyeOff size={14} />
+              <EyeOff size={11} />
             </button>
           )}
         </div>
 
         {/* Rating row */}
-        <div className="flex items-center gap-1.5 mt-2">
+        <div className="flex items-center gap-1 mt-1.5">
           {[1, 2, 3, 4, 5, 6].map((num) => (
             <button
               key={num}
               onClick={() => onSetRating(num)}
-              className={`w-8 h-8 rounded-full text-xs font-semibold transition-all duration-200 ${
+              className={`w-6 h-6 rounded-full text-[10px] font-semibold transition-all duration-200 ${
                 talent.clientRating === num
                   ? "bg-[#B8964C] text-[#0F0F12]"
                   : "bg-[#1A1C22] text-[#8B8D93] hover:bg-[#262930]"
