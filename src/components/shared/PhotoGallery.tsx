@@ -69,6 +69,8 @@ export default function PhotoGallery({
           alt={current.label || `Photo ${currentIndex + 1}`}
           fill
           sizes="90vw"
+          quality={85}
+          priority
           className="object-contain rounded-lg"
         />
 

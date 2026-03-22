@@ -441,7 +441,7 @@ export default function RosterClient({
 
       {/* Talent grid */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-        {paginated.map((talent) => (
+        {paginated.map((talent, idx) => (
           <div
             key={talent.id}
             className={`group relative rounded-xl overflow-hidden shadow-lg shadow-black/20 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/30 transition-all duration-300 bg-[#13151A] ${
@@ -457,6 +457,7 @@ export default function RosterClient({
                 name={talent.full_name}
                 size="lg"
                 aspectRatio="3/4"
+                priority={idx < 5}
               />
 
               {/* Name/age/location overlay */}

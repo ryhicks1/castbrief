@@ -228,10 +228,11 @@ export default function PackageView({
 
       {/* Talent grid */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-        {visibleTalents.map((talent) => (
+        {visibleTalents.map((talent, idx) => (
           <TalentCard
             key={talent.packageTalentId}
             talent={talent}
+            index={idx}
             isCommenting={commentingId === talent.packageTalentId}
             onSetStatus={(s) => setStatus(talent.packageTalentId, s)}
             onSetRating={(r) => setRating(talent.packageTalentId, r)}
@@ -288,6 +289,7 @@ export default function PackageView({
 
 function TalentCard({
   talent,
+  index = 0,
   isCommenting,
   onSetStatus,
   onSetRating,
@@ -297,6 +299,7 @@ function TalentCard({
   onCancelComment,
 }: {
   talent: TalentData;
+  index?: number;
   isCommenting: boolean;
   onSetStatus: (s: "yes" | "no" | "maybe") => void;
   onSetRating: (r: number) => void;
@@ -328,13 +331,16 @@ function TalentCard({
       } bg-[#13151A]`}
     >
       {/* Photo area -- 3:4 aspect ratio headshot */}
-      <div className="relative" style={{ aspectRatio: "3/4" }}>
+      <div className="relative bg-[#1E2128]" style={{ aspectRatio: "3/4" }}>
         {talent.photo_url ? (
           <Image
             src={talent.photo_url}
             alt={talent.full_name}
             fill
-            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
+            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+            quality={80}
+            priority={index < 5}
+            loading={index < 5 ? "eager" : "lazy"}
             className="object-cover photo-cinematic transition-transform duration-500 group-hover:scale-105"
           />
         ) : (

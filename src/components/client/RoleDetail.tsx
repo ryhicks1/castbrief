@@ -270,13 +270,14 @@ function RoleTalentCard({
       } bg-[#13151A]`}
     >
       {/* Photo area -- 3:4 aspect ratio */}
-      <div className="relative" style={{ aspectRatio: "3/4" }}>
+      <div className="relative bg-[#1E2128]" style={{ aspectRatio: "3/4" }}>
         {t.photo_url ? (
           <Image
             src={t.photo_url}
             alt={t.full_name || "Talent"}
             fill
-            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
+            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+            quality={80}
             className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (

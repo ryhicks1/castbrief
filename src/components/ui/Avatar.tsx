@@ -98,12 +98,14 @@ export function TalentPhoto({
   size = "lg",
   className = "",
   aspectRatio = "3/4",
+  priority = false,
 }: {
   photo_url?: string | null;
   name: string;
   size?: "sm" | "md" | "lg";
   className?: string;
   aspectRatio?: string;
+  priority?: boolean;
 }) {
   const initials = name
     .split(" ")
@@ -115,14 +117,17 @@ export function TalentPhoto({
   if (photo_url) {
     return (
       <div
-        className={`relative overflow-hidden ${className}`}
+        className={`relative overflow-hidden bg-[#1E2128] ${className}`}
         style={{ aspectRatio }}
       >
         <Image
           src={photo_url}
           alt={name}
           fill
-          sizes="(max-width: 768px) 100vw, 50vw"
+          sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+          quality={80}
+          priority={priority}
+          loading={priority ? "eager" : "lazy"}
           className="object-cover photo-cinematic transition-transform duration-500 group-hover:scale-105"
         />
       </div>
