@@ -1,3 +1,5 @@
+import { getAppUrl } from "@/lib/resend/client";
+
 interface TalentMessageEmailProps {
   agentName: string;
   packageName: string;
@@ -11,7 +13,7 @@ export function renderTalentMessageEmail({
   talentName,
   messageContent,
 }: TalentMessageEmailProps): { subject: string; html: string } {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://castingbrief.com";
+  const appUrl = getAppUrl();
   const subject = `Message from ${agentName} regarding ${packageName}`;
 
   const html = `

@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 const sizeMap = {
   sm: "h-8 w-8 text-xs",
   md: "h-11 w-11 text-sm",
@@ -30,11 +32,15 @@ export default function Avatar({
 }: AvatarProps) {
   if (src) {
     return (
-      <img
-        src={src}
-        alt={name}
-        className={`rounded-full object-cover photo-cinematic ${sizeMap[size]} ${className}`}
-      />
+      <div className={`relative rounded-full overflow-hidden ${sizeMap[size]} ${className}`}>
+        <Image
+          src={src}
+          alt={name}
+          fill
+          sizes="(max-width: 768px) 64px, 64px"
+          className="object-cover photo-cinematic"
+        />
+      </div>
     );
   }
 
@@ -112,10 +118,12 @@ export function TalentPhoto({
         className={`relative overflow-hidden ${className}`}
         style={{ aspectRatio }}
       >
-        <img
+        <Image
           src={photo_url}
           alt={name}
-          className="absolute inset-0 w-full h-full object-cover photo-cinematic transition-transform duration-500 group-hover:scale-105"
+          fill
+          sizes="(max-width: 768px) 100vw, 50vw"
+          className="object-cover photo-cinematic transition-transform duration-500 group-hover:scale-105"
         />
       </div>
     );

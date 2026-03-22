@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui";
 
 interface InboxPackage {
   id: string;
@@ -78,9 +79,20 @@ export default function InboxClient({ packages, projects }: InboxClientProps) {
           <h2 className="text-xl font-semibold text-[#E8E3D8] mb-2">
             No packages received yet
           </h2>
-          <p className="text-sm text-[#8B8D93]">
-            Packages sent to your email will appear here.
+          <p className="text-sm text-[#8B8D93] max-w-md text-center mb-6">
+            When agents send you talent packages, they will appear here for
+            review. You can browse talent, leave picks, and assign packages to
+            your projects.
           </p>
+          {projects.length > 0 ? (
+            <Link href={`/client/projects/${projects[0].id}`}>
+              <Button variant="secondary">Request a Package</Button>
+            </Link>
+          ) : (
+            <p className="text-xs text-[#8B8D93]">
+              Create a project first, then request packages from your agents.
+            </p>
+          )}
         </div>
       ) : (
         <div className="space-y-2">
@@ -127,12 +139,14 @@ export default function InboxClient({ packages, projects }: InboxClientProps) {
                     >
                       View
                     </Link>
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => setAssignModal(pkg.id)}
-                      className="rounded-lg bg-[#C9A84C]/10 border border-[#C9A84C]/20 px-3 py-1.5 text-xs text-[#C9A84C] hover:bg-[#C9A84C]/20 transition"
+                      className="bg-[#C9A84C]/10 border border-[#C9A84C]/20 text-[#C9A84C] hover:bg-[#C9A84C]/20"
                     >
                       Assign to Project
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -193,23 +207,25 @@ export default function InboxClient({ packages, projects }: InboxClientProps) {
             </div>
 
             <div className="flex gap-3">
-              <button
+              <Button
+                variant="primary"
+                className="flex-1"
                 onClick={handleAssign}
                 disabled={!selectedProject || !selectedRole || assigning}
-                className="flex-1 rounded-lg bg-gradient-to-r from-[#C9A84C] to-[#B8943F] px-4 py-2 text-sm font-semibold text-[#0D0F14] disabled:opacity-50"
+                loading={assigning}
               >
                 {assigning ? "Assigning..." : "Assign"}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="secondary"
                 onClick={() => {
                   setAssignModal(null);
                   setSelectedProject("");
                   setSelectedRole("");
                 }}
-                className="rounded-lg bg-[#1E2128] border border-[#2A2D35] px-4 py-2 text-sm text-[#E8E3D8]"
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         </div>

@@ -27,6 +27,13 @@ export default async function ProjectPage({
 
   if (!project) redirect("/client/projects");
 
+  // Fetch package requests for this project
+  const { data: requests } = await supabase
+    .from("package_requests")
+    .select("id, agent_email, role_id, brief, created_at, status")
+    .eq("project_id", id)
+    .order("created_at", { ascending: false });
+
   // Fetch role_packages for each role
   const roleIds = (project.roles || []).map((r: any) => r.id);
   let rolePackages: any[] = [];
@@ -86,6 +93,7 @@ export default async function ProjectPage({
     <ProjectDetail
       project={assembledProject as any}
       userId={user.id}
+      requests={requests || []}
     />
   );
 }

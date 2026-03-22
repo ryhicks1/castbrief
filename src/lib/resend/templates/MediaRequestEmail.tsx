@@ -1,3 +1,5 @@
+import { getAppUrl } from "@/lib/resend/client";
+
 interface MediaRequestEmailProps {
   clientName: string;
   packageName: string;
@@ -11,7 +13,7 @@ export function renderMediaRequestEmail({
   talentNames,
   token,
 }: MediaRequestEmailProps): { subject: string; html: string } {
-  const url = `${process.env.NEXT_PUBLIC_APP_URL || "https://castingbrief.com"}/p/${token}`;
+  const url = `${getAppUrl()}/p/${token}`;
   const subject = `Media requested for ${packageName}`;
 
   const talentList = talentNames

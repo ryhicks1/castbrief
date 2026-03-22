@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrg } from "@/lib/supabase/org";
 import { renderTalentMessageEmail } from "@/lib/resend/templates/TalentMessageEmail";
 import { sendEmail } from "@/lib/resend/client";
+import { z } from "zod";
 
 export async function POST(request: Request) {
   try {
@@ -28,18 +29,22 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { package_id, talent_id, content } = body as {
-      package_id: string;
-      talent_id?: string;
-      content: string;
-    };
 
-    if (!package_id || !content?.trim()) {
+    const messageSchema = z.object({
+      package_id: z.string().uuid("Invalid package ID"),
+      talent_id: z.string().uuid("Invalid talent ID").optional(),
+      content: z.string().min(1, "Message content is required").max(5000, "Message is too long"),
+    });
+
+    const parsed = messageSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "package_id and content are required" },
+        { error: parsed.error.issues[0].message },
         { status: 400 }
       );
     }
+
+    const { package_id, talent_id, content } = parsed.data;
 
     const orgMembership = await getCurrentOrg(supabase, user.id);
     if (!orgMembership) {

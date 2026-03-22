@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Image from "next/image";
 import { X, Paperclip, Loader2 } from "lucide-react";
 import { InitialsAvatar } from "@/components/ui/Avatar";
 
@@ -113,10 +114,12 @@ export default function MediaRequestModal({
               className="flex items-center gap-2"
             >
               {t.photoUrl ? (
-                <img
+                <Image
                   src={t.photoUrl}
                   alt={t.name}
-                  className="h-7 w-7 rounded-full object-cover shrink-0"
+                  width={28}
+                  height={28}
+                  className="rounded-full object-cover shrink-0"
                 />
               ) : (
                 <InitialsAvatar name={t.name} size={28} />

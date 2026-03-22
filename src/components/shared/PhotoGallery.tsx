@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface PhotoGalleryProps {
@@ -62,11 +63,13 @@ export default function PhotoGallery({
       )}
 
       {/* Photo */}
-      <div className="relative max-w-[90vw] max-h-[90vh] flex items-center justify-center">
-        <img
+      <div className="relative w-[90vw] h-[85vh]">
+        <Image
           src={current.url}
           alt={current.label || `Photo ${currentIndex + 1}`}
-          className="max-w-full max-h-[85vh] object-contain rounded-lg"
+          fill
+          sizes="90vw"
+          className="object-contain rounded-lg"
         />
 
         {/* Label badge */}

@@ -3,17 +3,29 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { Button, Input, MultiSelect, Chip } from "@/components/ui";
+
+interface Agent {
+  id: string;
+  name: string;
+}
+
+interface Role {
+  id: string;
+  name: string;
+}
 
 export default function RequestPackagePage() {
   const router = useRouter();
   const params = useParams();
   const projectId = params.id as string;
 
-  const [agents, setAgents] = useState<{ email: string; name: string }[]>([]);
-  const [roles, setRoles] = useState<{ id: string; name: string }[]>([]);
-  const [selectedAgent, setSelectedAgent] = useState("");
-  const [manualEmail, setManualEmail] = useState("");
-  const [selectedRole, setSelectedRole] = useState("");
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
+  const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
+  const [manualEmails, setManualEmails] = useState<string[]>([]);
+  const [emailInput, setEmailInput] = useState("");
   const [brief, setBrief] = useState("");
   const [loading, setLoading] = useState(false);
   const [projectName, setProjectName] = useState("");
@@ -21,7 +33,9 @@ export default function RequestPackagePage() {
   useEffect(() => {
     async function load() {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       // Get project + roles
@@ -37,25 +51,18 @@ export default function RequestPackagePage() {
       }
 
       // Get agents who have sent packages to this client
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("id", user.id)
-        .single();
-
-      // Find packages sent to this user's email
       const { data: packages } = await supabase
         .from("packages")
         .select("agent_id, profiles:agent_id(full_name, agency_name)")
         .not("agent_id", "is", null);
 
       if (packages) {
-        const uniqueAgents = new Map<string, { email: string; name: string }>();
+        const uniqueAgents = new Map<string, Agent>();
         for (const pkg of packages) {
           const p = (pkg as any).profiles;
           if (p && !uniqueAgents.has(pkg.agent_id)) {
             uniqueAgents.set(pkg.agent_id, {
-              email: pkg.agent_id,
+              id: pkg.agent_id,
               name: p.agency_name || p.full_name,
             });
           }
@@ -66,107 +73,184 @@ export default function RequestPackagePage() {
     load();
   }, [projectId]);
 
+  function addEmail() {
+    const email = emailInput.trim().toLowerCase();
+    if (!email) return;
+    // Basic email validation
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+    if (manualEmails.includes(email)) return;
+    setManualEmails((prev) => [...prev, email]);
+    setEmailInput("");
+  }
+
+  function removeEmail(email: string) {
+    setManualEmails((prev) => prev.filter((e) => e !== email));
+  }
+
+  function handleEmailKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addEmail();
+    }
+  }
+
+  const hasRecipients = selectedAgentIds.length > 0 || manualEmails.length > 0;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const agentEmail = selectedAgent || manualEmail;
-    if (!agentEmail.trim()) return;
+    if (!hasRecipients) return;
 
     setLoading(true);
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
-    await supabase.from("package_requests").insert({
-      client_id: user.id,
-      agent_email: agentEmail,
-      project_id: projectId,
-      role_id: selectedRole || null,
-      brief: brief || null,
-    });
+    const rows: {
+      client_id: string;
+      agent_email: string;
+      project_id: string;
+      role_id: string | null;
+      brief: string | null;
+    }[] = [];
+
+    // Collect all agent emails (selected agent IDs + manual emails)
+    const allAgentEmails = [
+      ...selectedAgentIds,
+      ...manualEmails,
+    ];
+
+    for (const agentEmail of allAgentEmails) {
+      if (selectedRoleIds.length === 0) {
+        // No roles selected: one row per agent with null role_id
+        rows.push({
+          client_id: user.id,
+          agent_email: agentEmail,
+          project_id: projectId,
+          role_id: null,
+          brief: brief || null,
+        });
+      } else {
+        // Cartesian product: one row per agent x role
+        for (const roleId of selectedRoleIds) {
+          rows.push({
+            client_id: user.id,
+            agent_email: agentEmail,
+            project_id: projectId,
+            role_id: roleId,
+            brief: brief || null,
+          });
+        }
+      }
+    }
+
+    if (rows.length > 0) {
+      await supabase.from("package_requests").insert(rows);
+    }
 
     setLoading(false);
     router.push(`/client/projects/${projectId}`);
   }
+
+  const agentOptions = agents.map((a) => ({ value: a.id, label: a.name }));
+  const roleOptions = roles.map((r) => ({ value: r.id, label: r.name }));
 
   return (
     <div className="max-w-lg mx-auto">
       <h1 className="text-xl font-bold text-[#E8E3D8] mb-2">
         Request Package
       </h1>
-      <p className="text-sm text-[#8B8D93] mb-6">
-        for {projectName}
-      </p>
+      <p className="text-sm text-[#8B8D93] mb-6">for {projectName}</p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Agent multi-select */}
         {agents.length > 0 && (
-          <div>
-            <label className="block text-sm text-[#E8E3D8] mb-1">
-              Select Agent
-            </label>
-            <select
-              value={selectedAgent}
-              onChange={(e) => setSelectedAgent(e.target.value)}
-              className="w-full rounded-lg border border-[#2A2D35] bg-[#1E2128] px-3 py-2 text-sm text-[#E8E3D8] focus:border-[#C9A84C] focus:outline-none"
-            >
-              <option value="">Choose an agent...</option>
-              {agents.map((a) => (
-                <option key={a.email} value={a.email}>
-                  {a.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <MultiSelect
+            label="Select Agents"
+            options={agentOptions}
+            selected={selectedAgentIds}
+            onChange={setSelectedAgentIds}
+            placeholder="Choose agents..."
+          />
         )}
 
+        {/* Manual email input */}
         <div>
-          <label className="block text-sm text-[#E8E3D8] mb-1">
-            Or add agent by email
+          <label className="mb-1.5 block text-sm font-medium text-[#E8E3D8]">
+            Add agents by email
           </label>
-          <input
-            type="email"
-            value={manualEmail}
-            onChange={(e) => setManualEmail(e.target.value)}
-            placeholder="agent@agency.com"
-            className="w-full rounded-lg border border-[#2A2D35] bg-[#1E2128] px-3 py-2 text-sm text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#C9A84C] focus:outline-none"
-          />
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <Input
+                type="email"
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                onKeyDown={handleEmailKeyDown}
+                placeholder="agent@agency.com"
+              />
+            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              size="md"
+              onClick={addEmail}
+            >
+              Add
+            </Button>
+          </div>
+          {manualEmails.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {manualEmails.map((email) => (
+                <Chip
+                  key={email}
+                  label={email}
+                  active
+                  onRemove={() => removeEmail(email)}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
+        {/* Role multi-select */}
         {roles.length > 0 && (
-          <div>
-            <label className="block text-sm text-[#E8E3D8] mb-1">Role</label>
-            <select
-              value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value)}
-              className="w-full rounded-lg border border-[#2A2D35] bg-[#1E2128] px-3 py-2 text-sm text-[#E8E3D8] focus:border-[#C9A84C] focus:outline-none"
-            >
-              <option value="">Select a role...</option>
-              {roles.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <MultiSelect
+            label="Roles"
+            options={roleOptions}
+            selected={selectedRoleIds}
+            onChange={setSelectedRoleIds}
+            placeholder="Select roles..."
+          />
         )}
 
+        {/* Brief */}
         <div>
-          <label className="block text-sm text-[#E8E3D8] mb-1">Brief</label>
+          <label className="mb-1.5 block text-sm font-medium text-[#E8E3D8]">
+            Brief
+          </label>
           <textarea
             value={brief}
             onChange={(e) => setBrief(e.target.value)}
             rows={4}
             placeholder="Describe what kind of talent you're looking for..."
-            className="w-full rounded-lg border border-[#2A2D35] bg-[#1E2128] px-3 py-2 text-sm text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#C9A84C] focus:outline-none resize-none"
+            className="w-full rounded-lg border border-[#1E2128] bg-[#0F0F12] px-3 py-2 text-sm text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#B8964C] focus:outline-none focus:ring-1 focus:ring-[#B8964C] transition-all duration-300 resize-none"
           />
         </div>
 
-        <button
+        <Button
           type="submit"
-          disabled={loading || (!selectedAgent && !manualEmail)}
-          className="w-full rounded-lg bg-gradient-to-r from-[#C9A84C] to-[#B8943F] px-4 py-2 text-sm font-semibold text-[#0D0F14] hover:from-[#D4B35C] hover:to-[#C9A84C] transition disabled:opacity-50"
+          variant="primary"
+          size="md"
+          loading={loading}
+          disabled={!hasRecipients}
+          className="w-full"
         >
-          {loading ? "Sending..." : "Send Request"}
-        </button>
+          {loading ? "Sending..." : "Send Requests"}
+        </Button>
       </form>
     </div>
   );

@@ -1,3 +1,5 @@
+import { getAppUrl } from "@/lib/resend/client";
+
 interface PackageLinkEmailProps {
   agentName: string;
   packageName: string;
@@ -9,7 +11,7 @@ export function renderPackageLinkEmail({
   packageName,
   token,
 }: PackageLinkEmailProps): { subject: string; html: string } {
-  const url = `${process.env.NEXT_PUBLIC_APP_URL || "https://castingbrief.com"}/p/${token}`;
+  const url = `${getAppUrl()}/p/${token}`;
   const subject = `${agentName} has shared a talent package with you`;
 
   const html = `

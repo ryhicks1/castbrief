@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { Button, Input, Chip, Avatar } from "@/components/ui";
 import PhotoGallery from "@/components/shared/PhotoGallery";
@@ -450,11 +451,24 @@ export default function TalentForm({
                 className="relative group rounded-lg overflow-hidden border border-[#2A2D35] bg-[#1E2128] cursor-pointer"
                 onClick={() => setGalleryIndex(index)}
               >
-                <img
-                  src={photo.url}
-                  alt={`Photo ${index + 1}`}
-                  className="w-full aspect-square object-cover"
-                />
+                {photo.file ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={photo.url}
+                    alt={`Photo ${index + 1}`}
+                    className="w-full aspect-square object-cover"
+                  />
+                ) : (
+                  <div className="relative w-full aspect-square">
+                    <Image
+                      src={photo.url}
+                      alt={`Photo ${index + 1}`}
+                      fill
+                      sizes="(max-width: 640px) 50vw, 25vw"
+                      className="object-cover"
+                    />
+                  </div>
+                )}
                 {/* Drag handle */}
                 <div className="absolute top-1 left-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing">
                   <div className="rounded bg-black/60 p-0.5">

@@ -8,6 +8,10 @@ function getResend() {
   return new Resend(key);
 }
 
+export function getAppUrl(): string {
+  return process.env.NEXT_PUBLIC_APP_URL || "https://castingbrief.com";
+}
+
 export async function sendEmail(to: string, subject: string, html: string) {
   const resend = getResend();
   const { data, error } = await resend.emails.send({
@@ -23,5 +27,3 @@ export async function sendEmail(to: string, subject: string, html: string) {
 
   return data;
 }
-
-export { getResend as resend };

@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Button, Chip, Input } from "@/components/ui";
+import { Button, Chip, Input, Pagination } from "@/components/ui";
 import { TalentPhoto } from "@/components/ui/Avatar";
 import { X, Upload, Mail, Loader2 } from "lucide-react";
 
@@ -54,6 +54,8 @@ export default function RosterClient({
   const [search, setSearch] = useState("");
   const [activeChips, setActiveChips] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 20;
 
   const filtered = useMemo(() => {
     return talents.filter((t) => {
@@ -73,6 +75,9 @@ export default function RosterClient({
     });
   }, [talents, search, activeChips]);
 
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   function toggleChipFilter(chipId: string) {
     setActiveChips((prev) => {
       const next = new Set(prev);
@@ -80,6 +85,7 @@ export default function RosterClient({
       else next.add(chipId);
       return next;
     });
+    setPage(1);
   }
 
   function toggleSelect(id: string) {
@@ -393,7 +399,7 @@ export default function RosterClient({
           type="text"
           placeholder="Search by name or tag..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           className="w-full max-w-md rounded-lg border border-[#1E2128] bg-[#0F0F12] px-3 py-2 text-sm text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#B8964C] focus:outline-none focus:ring-1 focus:ring-[#B8964C] transition-all duration-300"
         />
       </div>
@@ -415,7 +421,7 @@ export default function RosterClient({
 
       {/* Talent grid */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filtered.map((talent) => (
+        {paginated.map((talent) => (
           <div
             key={talent.id}
             className={`group relative rounded-xl overflow-hidden shadow-lg shadow-black/20 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/30 transition-all duration-300 bg-[#13151A] ${
@@ -532,6 +538,12 @@ export default function RosterClient({
           No talents match your filters
         </div>
       )}
+
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+      />
 
       {/* Bulk Import Modal */}
       {showBulkModal && (

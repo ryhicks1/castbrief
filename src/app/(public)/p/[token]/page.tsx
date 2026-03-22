@@ -1,6 +1,36 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import PackageView from "@/components/client/PackageView";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}): Promise<Metadata> {
+  const { token } = await params;
+  const supabase = createAdminClient();
+
+  const { data: pkg } = await supabase
+    .from("packages")
+    .select("name, profiles:agent_id(full_name, agency_name), package_talents(id)")
+    .eq("token", token)
+    .single();
+
+  if (!pkg) {
+    return { title: "Package Not Found — CastingBrief" };
+  }
+
+  const agentProfile = pkg.profiles as any;
+  const agencyName =
+    agentProfile?.agency_name || agentProfile?.full_name || "CastingBrief";
+  const talentCount = pkg.package_talents?.length ?? 0;
+
+  return {
+    title: `${pkg.name} — ${agencyName}`,
+    description: `Talent package with ${talentCount} ${talentCount === 1 ? "talent" : "talents"} from ${agencyName}. View on CastingBrief.`,
+  };
+}
 
 export default async function PublicPackagePage({
   params,

@@ -1,3 +1,5 @@
+import { getAppUrl } from "@/lib/resend/client";
+
 interface UploadConfirmationEmailProps {
   talentName: string;
   packageName: string;
@@ -9,7 +11,7 @@ export function renderUploadConfirmationEmail({
   packageName,
   agentDashboardUrl,
 }: UploadConfirmationEmailProps): { subject: string; html: string } {
-  const url = agentDashboardUrl || `${process.env.NEXT_PUBLIC_APP_URL || "https://castingbrief.com"}/agent/dashboard`;
+  const url = agentDashboardUrl || `${getAppUrl()}/agent/dashboard`;
   const subject = `${talentName} has uploaded their materials`;
 
   const html = `

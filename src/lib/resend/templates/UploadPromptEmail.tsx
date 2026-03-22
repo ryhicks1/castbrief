@@ -1,3 +1,5 @@
+import { getAppUrl } from "@/lib/resend/client";
+
 interface UploadPromptEmailProps {
   agentName: string;
   packageName: string;
@@ -15,7 +17,7 @@ export function renderUploadPromptEmail({
   message,
   link,
 }: UploadPromptEmailProps): { subject: string; html: string } {
-  const url = `${process.env.NEXT_PUBLIC_APP_URL || "https://castingbrief.com"}/upload/${uploadToken}`;
+  const url = `${getAppUrl()}/upload/${uploadToken}`;
   const subject = `You've been requested to submit materials for ${packageName}`;
 
   const html = `

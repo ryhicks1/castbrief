@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Image from "next/image";
 import { MessageSquare, EyeOff } from "lucide-react";
 
 interface TalentChip {
@@ -320,10 +321,12 @@ function TalentCard({
       {/* Photo area -- 4:5 aspect ratio headshot */}
       <div className="relative" style={{ aspectRatio: "4/5" }}>
         {talent.photo_url ? (
-          <img
+          <Image
             src={talent.photo_url}
             alt={talent.full_name}
-            className="absolute inset-0 w-full h-full object-cover photo-cinematic transition-transform duration-500 group-hover:scale-105"
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className="object-cover photo-cinematic transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
           <div

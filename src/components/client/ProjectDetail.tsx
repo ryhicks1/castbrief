@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { Badge, Button, Input } from "@/components/ui";
 
 function agencyColor(agentId: string): string {
   let hash = 0;
@@ -14,7 +15,17 @@ function agencyColor(agentId: string): string {
   return `hsl(${hue}, 60%, 55%)`;
 }
 
+interface PackageRequest {
+  id: string;
+  agent_email: string;
+  role_id: string | null;
+  brief: string | null;
+  created_at: string;
+  status: string | null;
+}
+
 interface ProjectDetailProps {
+  requests?: PackageRequest[];
   project: {
     id: string;
     name: string;
@@ -48,7 +59,7 @@ interface ProjectDetailProps {
   userId: string;
 }
 
-export default function ProjectDetail({ project, userId }: ProjectDetailProps) {
+export default function ProjectDetail({ project, userId, requests = [] }: ProjectDetailProps) {
   const router = useRouter();
   const [roleName, setRoleName] = useState("");
   const [roleBrief, setRoleBrief] = useState("");
@@ -114,27 +125,28 @@ export default function ProjectDetail({ project, userId }: ProjectDetailProps) {
           Roles
         </h2>
         <form onSubmit={handleAddRole} className="flex gap-2 mb-4">
-          <input
+          <Input
             type="text"
             value={roleName}
             onChange={(e) => setRoleName(e.target.value)}
             placeholder="Role name..."
-            className="flex-1 rounded-lg border border-[#2A2D35] bg-[#1E2128] px-3 py-2 text-sm text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#C9A84C] focus:outline-none"
+            className="flex-1"
           />
-          <input
+          <Input
             type="text"
             value={roleBrief}
             onChange={(e) => setRoleBrief(e.target.value)}
             placeholder="Brief description..."
-            className="flex-1 rounded-lg border border-[#2A2D35] bg-[#1E2128] px-3 py-2 text-sm text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#C9A84C] focus:outline-none"
+            className="flex-1"
           />
-          <button
+          <Button
+            variant="secondary"
             type="submit"
             disabled={addingRole || !roleName.trim()}
-            className="rounded-lg bg-[#1E2128] border border-[#2A2D35] px-4 py-2 text-sm text-[#E8E3D8] hover:bg-[#262930] transition disabled:opacity-50"
+            loading={addingRole}
           >
             + Add Role
-          </button>
+          </Button>
         </form>
       </div>
 
@@ -257,6 +269,60 @@ export default function ProjectDetail({ project, userId }: ProjectDetailProps) {
             </div>
           );
         })}
+      </div>
+
+      {/* Requests section */}
+      <div className="mt-8">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-[#8B8D93] mb-3">
+          Requests
+        </h2>
+        {requests.length === 0 ? (
+          <p className="text-sm text-[#8B8D93]">No requests sent yet.</p>
+        ) : (
+          <div className="rounded-xl border border-[#1E2128] bg-[#161920] overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[#1E2128] text-left text-xs text-[#8B8D93]">
+                  <th className="px-4 py-3 font-medium">Agent</th>
+                  <th className="px-4 py-3 font-medium">Role</th>
+                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Date Sent</th>
+                </tr>
+              </thead>
+              <tbody>
+                {requests.map((req) => {
+                  const role = project.roles?.find((r) => r.id === req.role_id);
+                  const roleName = role ? role.name : "Any Role";
+                  const isResponded = req.status === "responded";
+                  return (
+                    <tr
+                      key={req.id}
+                      className="border-b border-[#1E2128] last:border-b-0"
+                    >
+                      <td className="px-4 py-3 text-[#E8E3D8]">
+                        {req.agent_email}
+                      </td>
+                      <td className="px-4 py-3 text-[#8B8D93]">{roleName}</td>
+                      <td className="px-4 py-3">
+                        <Badge
+                          label={isResponded ? "Responded" : "Pending"}
+                          color={isResponded ? "green" : "gold"}
+                        />
+                      </td>
+                      <td className="px-4 py-3 text-[#8B8D93]">
+                        {new Date(req.created_at).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

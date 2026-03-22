@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Button, Input } from "@/components/ui";
 
 export default function OnboardingPage() {
   const [role, setRole] = useState<"agent" | "client" | "talent" | null>(null);
@@ -219,45 +220,31 @@ export default function OnboardingPage() {
               </div>
             </div>
 
-            <div>
-              <label htmlFor="fullName" className="block text-sm text-[#8B8D93] mb-1">
-                Full Name
-              </label>
-              <input
-                id="fullName"
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-                className="block w-full rounded-lg border border-[#2A2D35] bg-[#0D0F14] px-3 py-2.5 text-sm text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#C9A84C] focus:outline-none"
-              />
-            </div>
+            <Input
+              id="fullName"
+              label="Full Name"
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+            />
 
             {role === "agent" && (
-              <div>
-                <label htmlFor="agencyName" className="block text-sm text-[#8B8D93] mb-1">
-                  Agency Name
-                </label>
-                <input
-                  id="agencyName"
-                  type="text"
-                  value={agencyName}
-                  onChange={(e) => setAgencyName(e.target.value)}
-                  required
-                  className="block w-full rounded-lg border border-[#2A2D35] bg-[#0D0F14] px-3 py-2.5 text-sm text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#C9A84C] focus:outline-none"
-                />
-              </div>
+              <Input
+                id="agencyName"
+                label="Agency Name"
+                type="text"
+                value={agencyName}
+                onChange={(e) => setAgencyName(e.target.value)}
+                required
+              />
             )}
 
             {error && <p className="text-sm text-red-400">{error}</p>}
 
-            <button
-              type="submit"
-              disabled={loading || !role}
-              className="w-full rounded-lg bg-gradient-to-r from-[#C9A84C] to-[#B8943F] px-4 py-2.5 text-sm font-semibold text-[#0D0F14] hover:from-[#D4B35C] hover:to-[#C9A84C] transition disabled:opacity-50"
-            >
+            <Button variant="primary" className="w-full" loading={loading} type="submit" disabled={loading || !role}>
               {loading ? "Setting up..." : "Continue"}
-            </button>
+            </Button>
           </form>
         </div>
       </div>

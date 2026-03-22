@@ -14,7 +14,7 @@ export async function POST(request: Request) {
 
     const { data: pt } = await supabase
       .from("package_talents")
-      .select("id, upload_token, talents(full_name), packages(name, agent_id, profiles:agent_id(full_name, agency_name))")
+      .select("id, upload_token, talents(full_name, email, user_id), packages(name, agent_id, profiles:agent_id(full_name, agency_name))")
       .eq("id", packageTalentId)
       .single();
 
@@ -22,14 +22,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const talent = (pt as any).talents;
-    const pkg = (pt as any).packages;
+    const talent = (pt as Record<string, unknown>).talents as { full_name: string; email?: string; user_id?: string } | null;
+    const pkg = (pt as Record<string, unknown>).packages as { name: string; agent_id: string; profiles?: { full_name: string; agency_name?: string } } | null;
     const agentProfile = pkg?.profiles;
 
-    // For now we can't send email to talent directly (we don't have their email)
-    // This would need talent email in the talent table
-    // For now, return success as a no-op placeholder
-    console.log(`Upload reminder would be sent for ${talent.full_name} (token: ${pt.upload_token})`);
+    // Try to get talent email: first from talent record, then from auth user
+    let talentEmail = talent?.email;
+
+    if (!talentEmail && talent?.user_id) {
+      const { data: authUser } = await supabase.auth.admin.getUserById(talent.user_id);
+      talentEmail = authUser?.user?.email;
+    }
+
+    if (!talentEmail) {
+      return NextResponse.json(
+        { error: "No email address on file for this talent. They may need to create an account first." },
+        { status: 422 }
+      );
+    }
+
+    const { subject, html } = renderUploadPromptEmail({
+      agentName: agentProfile?.agency_name || agentProfile?.full_name || "Your Agent",
+      packageName: pkg?.name || "Untitled Package",
+      talentName: talent?.full_name || "Talent",
+      uploadToken: pt.upload_token,
+    });
+
+    await sendEmail(talentEmail, subject, html);
 
     return NextResponse.json({ success: true });
   } catch (error) {

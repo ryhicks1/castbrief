@@ -2,21 +2,24 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/resend/client";
 import { renderPackageLinkEmail } from "@/lib/resend/templates/PackageLinkEmail";
+import { sendPackageSchema } from "@/lib/validation/schemas";
 
 export async function POST(request: Request) {
   try {
-    const { packageId, recipientEmail, recipientName } = await request.json();
+    const body = await request.json();
 
-    if (!packageId || !recipientEmail) {
+    const parsed = sendPackageSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "packageId and recipientEmail are required" },
+        { error: parsed.error.issues[0].message },
         { status: 400 }
       );
     }
 
+    const { packageId, recipientEmail, recipientName } = parsed.data;
+
     const supabase = createAdminClient();
 
-    // Fetch package with agent profile
     const { data: pkg, error: pkgError } = await supabase
       .from("packages")
       .select("id, name, token, agent_id, status")
@@ -41,9 +44,17 @@ export async function POST(request: Request) {
       token: pkg.token,
     });
 
-    await sendEmail(recipientEmail, subject, html);
+    try {
+      await sendEmail(recipientEmail, subject, html);
+    } catch (emailError) {
+      console.error("Email delivery failed:", emailError);
+      return NextResponse.json(
+        { error: "Failed to deliver email. Please check the recipient address and try again." },
+        { status: 502 }
+      );
+    }
 
-    // Update package status to 'sent' and store recipient info
+    // Only update status after email is confirmed sent
     await supabase
       .from("packages")
       .update({
