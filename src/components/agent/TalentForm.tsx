@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button, Input, Chip, Avatar } from "@/components/ui";
 import PhotoGallery from "@/components/shared/PhotoGallery";
 import { X, GripVertical } from "lucide-react";
+import { LOCATIONS } from "@/lib/constants/locations";
 
 interface ChipData {
   id: string;
@@ -251,9 +252,21 @@ export default function TalentForm({
       photoUrl = publicUrl;
     }
 
+    // Normalize URLs: auto-prepend https:// if missing protocol
+    const normalizedLinks: Record<string, string> = {};
+    for (const [key, value] of Object.entries(form.links)) {
+      if (value && value.trim()) {
+        let url = value.trim();
+        if (url && !url.startsWith("http://") && !url.startsWith("https://")) {
+          url = "https://" + url;
+        }
+        normalizedLinks[key] = url;
+      }
+    }
+
     const talentData: Record<string, any> = {
       agent_id: agentId,
-      ...(orgId ? { org_id: orgId } : {}),
+      ...(orgId && !orgId.startsWith("__agent__") ? { org_id: orgId } : {}),
       full_name: form.full_name,
       age: form.age,
       location: form.location || null,
@@ -263,7 +276,7 @@ export default function TalentForm({
       about: form.about || null,
       special_skills: form.special_skills,
       photo_url: photoUrl,
-      links: form.links,
+      links: normalizedLinks,
       email: form.email || null,
       phone: form.phone || null,
       editing_locked: form.editing_locked,
@@ -547,12 +560,26 @@ export default function TalentForm({
             updateField("age", e.target.value ? Number(e.target.value) : null)
           }
         />
-        <Input
-          id="location"
-          label="Location"
-          value={form.location}
-          onChange={(e) => updateField("location", e.target.value)}
-        />
+        <div>
+          <label htmlFor="location" className="mb-1.5 block text-sm font-medium text-[#E8E3D8]">
+            Location
+          </label>
+          <input
+            id="location"
+            list="locations"
+            value={form.location}
+            onChange={(e) => updateField("location", e.target.value)}
+            placeholder="Start typing a city..."
+            className="block w-full rounded-lg border border-[#2A2D35] bg-[#1E2128] px-3 py-2 text-sm text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#C9A84C] focus:outline-none focus:ring-1 focus:ring-[#C9A84C]"
+          />
+          <datalist id="locations">
+            {LOCATIONS.map((loc) => (
+              <option key={loc.code} value={loc.city}>
+                {loc.city}, {loc.country}
+              </option>
+            ))}
+          </datalist>
+        </div>
         <Input
           id="cultural_background"
           label="Cultural Background"
@@ -691,7 +718,7 @@ export default function TalentForm({
               key={key}
               id={`link-${key}`}
               label={label}
-              type="url"
+              type="text"
               placeholder="https://..."
               value={(form.links as Record<string, string>)[key] || ""}
               onChange={(e) => updateLink(key, e.target.value)}

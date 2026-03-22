@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button, Chip, Input, Pagination } from "@/components/ui";
 import { TalentPhoto } from "@/components/ui/Avatar";
 import { X, Upload, Mail, Loader2 } from "lucide-react";
+import { LOCATIONS } from "@/lib/constants/locations";
 
 interface TalentChip {
   chip_id: string;
@@ -45,6 +46,25 @@ const linkLabels: Record<string, string> = {
   tiktok: "TT",
   instagram: "IG",
 };
+
+const linkColorSchemes: Record<string, string> = {
+  casting_networks: "orange",
+  actors_access: "green",
+  imdb: "default",
+  spotlight: "purple",
+  showcast: "teal",
+  youtube: "pink",
+  tiktok: "blue",
+  instagram: "pink",
+};
+
+function getLocationCode(location: string): string {
+  const match = LOCATIONS.find(
+    (loc) => loc.city.toLowerCase() === location.toLowerCase()
+  );
+  if (match) return match.code;
+  return location.slice(0, 3).toUpperCase();
+}
 
 export default function RosterClient({
   talents,
@@ -420,7 +440,7 @@ export default function RosterClient({
       )}
 
       {/* Talent grid */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {paginated.map((talent) => (
           <div
             key={talent.id}
@@ -430,56 +450,51 @@ export default function RosterClient({
                 : ""
             }`}
           >
-            {/* Photo area — 4:5 aspect ratio */}
-            <div className="relative">
+            {/* Photo area — 3:4 aspect ratio, clickable to profile */}
+            <Link href={`/agent/roster/${talent.id}`} className="block relative">
               <TalentPhoto
                 photo_url={talent.photo_url}
                 name={talent.full_name}
                 size="lg"
-                aspectRatio="4/5"
+                aspectRatio="3/4"
               />
 
-              {/* Checkbox overlay on top-right corner of photo */}
-              <div className="absolute top-3 right-3 z-10">
-                <label className="flex items-center justify-center w-6 h-6 rounded border-2 cursor-pointer transition-colors"
-                  style={{
-                    borderColor: selected.has(talent.id) ? "#B8964C" : "#8B8D93",
-                    backgroundColor: selected.has(talent.id) ? "#B8964C" : "rgba(15,15,18,0.6)",
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selected.has(talent.id)}
-                    onChange={() => toggleSelect(talent.id)}
-                    className="sr-only"
-                  />
-                  {selected.has(talent.id) && (
-                    <svg className="w-4 h-4 text-[#0F0F12]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </label>
+              {/* Name/age/location overlay */}
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                <p className="text-sm font-semibold text-white truncate">{talent.full_name}</p>
+                <p className="text-xs text-white/70">
+                  {talent.age ? `${talent.age}` : ""}{talent.location ? ` \u00B7 ${getLocationCode(talent.location)}` : ""}
+                </p>
               </div>
+            </Link>
+
+            {/* Checkbox overlay on top-right corner of photo */}
+            <div className="absolute top-3 right-3 z-10">
+              <label className="flex items-center justify-center w-6 h-6 rounded border-2 cursor-pointer transition-colors"
+                style={{
+                  borderColor: selected.has(talent.id) ? "#B8964C" : "#8B8D93",
+                  backgroundColor: selected.has(talent.id) ? "#B8964C" : "rgba(15,15,18,0.6)",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={selected.has(talent.id)}
+                  onChange={() => toggleSelect(talent.id)}
+                  className="sr-only"
+                />
+                {selected.has(talent.id) && (
+                  <svg className="w-4 h-4 text-[#0F0F12]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </label>
             </div>
 
-            {/* Card body */}
-            <div className="p-3">
-              <h3 className="text-sm font-semibold text-[#E8E3D8] truncate mb-1">
-                {talent.full_name}
-              </h3>
-              <div className="text-xs text-[#8B8D93] truncate mb-2">
-                {[
-                  talent.age ? `Age ${talent.age}` : null,
-                  talent.location,
-                  talent.cultural_background,
-                ]
-                  .filter(Boolean)
-                  .join(" \u00B7 ")}
-              </div>
-
+            {/* Card body — chips and link badges only */}
+            <div className="p-2">
               {/* Chips */}
               {talent.talent_chips.length > 0 && (
-                <div className="flex flex-wrap gap-1 mb-2">
+                <div className="flex flex-wrap gap-1 mb-1.5">
                   {talent.talent_chips.slice(0, 2).map((tc) => (
                     <Chip
                       key={tc.chip_id}
@@ -498,36 +513,25 @@ export default function RosterClient({
 
               {/* Profile link badges */}
               {talent.links && Object.keys(talent.links).length > 0 && (
-                <div className="flex flex-wrap gap-1 mb-2">
+                <div className="flex flex-wrap gap-1">
                   {Object.entries(talent.links)
                     .filter(([, url]) => url)
-                    .map(([key]) => (
-                      <span
+                    .map(([key, url]) => (
+                      <a
                         key={key}
-                        className="rounded bg-[#1E2128] px-1.5 py-0.5 text-[10px] font-medium text-[#8B8D93]"
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        {linkLabels[key] || key.toUpperCase()}
-                      </span>
+                        <Chip
+                          label={linkLabels[key] || key.toUpperCase()}
+                          colorScheme={(linkColorSchemes[key] || "default") as any}
+                        />
+                      </a>
                     ))}
                 </div>
               )}
-
-              {/* Actions */}
-              <div className="flex items-center gap-2 pt-2 border-t border-[#1E2128]">
-                <Link
-                  href={`/agent/roster/${talent.id}`}
-                  className="text-xs text-[#B8964C] underline hover:text-[#C9A64C]"
-                >
-                  View
-                </Link>
-                <span className="flex-1" />
-                <button
-                  className="text-sm text-[#8B8D93] hover:text-[#E8E3D8] transition-colors px-1"
-                  title="More options"
-                >
-                  &#x22EF;
-                </button>
-              </div>
             </div>
           </div>
         ))}
