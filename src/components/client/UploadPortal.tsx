@@ -165,9 +165,15 @@ export default function UploadPortal({
             <h2 className="text-xl font-semibold text-[#E8E3D8] mb-2">
               Your submission has been received!
             </h2>
-            <p className="text-sm text-[#8B8D93]">
+            <p className="text-sm text-[#8B8D93] mb-6">
               Confirmation email sent to you and your agent.
             </p>
+            <a
+              href="/talent/profile"
+              className="inline-flex items-center gap-2 rounded-lg bg-[#1E2128] px-5 py-2.5 text-sm text-[#E8E3D8] hover:bg-[#262930] transition"
+            >
+              ← Back to My Profile
+            </a>
           </div>
         </div>
       </div>
