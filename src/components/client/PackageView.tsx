@@ -93,9 +93,8 @@ export default function PackageView({
 
   const picks = talents.filter((t) => t.clientStatus === "yes");
   const hiddenCount = talents.filter((t) => t.isHiddenByClient).length;
-  const visibleTalents = showHidden
-    ? talents
-    : talents.filter((t) => !t.isHiddenByClient);
+  // Always show all talent — hidden ones are greyed out, not removed
+  const visibleTalents = talents;
 
   const patchTalent = useCallback(
     async (id: string, updates: Record<string, any>) => {
@@ -148,6 +147,15 @@ export default function PackageView({
       )
     );
     patchTalent(id, { is_hidden_by_client: true });
+  }
+
+  function unhideTalent(id: string) {
+    setTalents((prev) =>
+      prev.map((t) =>
+        t.packageTalentId === id ? { ...t, isHiddenByClient: false } : t
+      )
+    );
+    patchTalent(id, { is_hidden_by_client: false });
   }
 
   function saveComment(id: string, comment: string) {
@@ -233,26 +241,10 @@ export default function PackageView({
         </div>
       </div>
 
-      {/* Hidden banner */}
-      {hiddenCount > 0 && !showHidden && (
+      {/* Hidden count info */}
+      {hiddenCount > 0 && (
         <div className="mb-4 rounded-lg bg-[#13151A] border border-[#1E2128] px-4 py-2 text-sm text-[#8B8D93]">
-          {hiddenCount} talent hidden &mdash;{" "}
-          <button
-            onClick={() => setShowHidden(true)}
-            className="text-[#B8964C] hover:underline"
-          >
-            Show all
-          </button>
-        </div>
-      )}
-      {showHidden && hiddenCount > 0 && (
-        <div className="mb-4">
-          <button
-            onClick={() => setShowHidden(false)}
-            className="text-xs text-[#B8964C] hover:underline"
-          >
-            Hide hidden talent again
-          </button>
+          {hiddenCount} talent hidden — greyed out below. Click the eye icon to unhide.
         </div>
       )}
 
@@ -267,6 +259,7 @@ export default function PackageView({
             onSetStatus={(s) => setStatus(talent.packageTalentId, s)}
             onSetRating={(r) => setRating(talent.packageTalentId, r)}
             onHide={() => hideTalent(talent.packageTalentId)}
+            onUnhide={() => unhideTalent(talent.packageTalentId)}
             onStartComment={() => setCommentingId(talent.packageTalentId)}
             onSaveComment={(c) => saveComment(talent.packageTalentId, c)}
             onCancelComment={() => setCommentingId(null)}
@@ -324,6 +317,7 @@ function TalentCard({
   onSetStatus,
   onSetRating,
   onHide,
+  onUnhide,
   onStartComment,
   onSaveComment,
   onCancelComment,
@@ -334,6 +328,7 @@ function TalentCard({
   onSetStatus: (s: "yes" | "no" | "maybe") => void;
   onSetRating: (r: number) => void;
   onHide: () => void;
+  onUnhide: () => void;
   onStartComment: () => void;
   onSaveComment: (c: string) => void;
   onCancelComment: () => void;
@@ -550,7 +545,16 @@ function TalentCard({
           >
             <MessageSquare size={11} />
           </button>
-          {!talent.isHiddenByClient && (
+          {talent.isHiddenByClient ? (
+            <button
+              onClick={onUnhide}
+              aria-label="Unhide talent"
+              className="rounded bg-[#1A1C22] min-h-[28px] min-w-[28px] flex items-center justify-center text-[#C9A84C] hover:bg-[#C9A84C]/20 hover:text-[#D4B35C] transition"
+              title="Unhide"
+            >
+              <EyeOff size={11} />
+            </button>
+          ) : (
             <button
               onClick={onHide}
               aria-label="Hide talent"
