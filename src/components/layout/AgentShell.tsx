@@ -89,7 +89,7 @@ export default function AgentShell({ children }: AgentShellProps) {
         </Link>
       </div>
       <nav className="flex-1 px-2 py-4 space-y-1">
-        {navItems.map((item) => {
+        {navItems.filter((i) => !i.primary).map((item) => {
           const active = pathname.startsWith(item.href);
           const Icon = item.icon;
           return (
@@ -100,12 +100,24 @@ export default function AgentShell({ children }: AgentShellProps) {
               className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
                 active
                   ? "relative before:content-[''] before:absolute before:left-1 before:top-1/2 before:-translate-y-1/2 before:w-1 before:h-1 before:rounded-full before:bg-[#B8964C] bg-[#B8964C]/5 text-[#B8964C]"
-                  : item.primary
-                  ? "text-[#B8964C] hover:bg-[#B8964C]/5"
                   : "text-[#8B8D93] hover:bg-[#13151A] hover:text-[#E8E3D8]"
               }`}
             >
               <Icon size={18} />
+              {item.label}
+            </Link>
+          );
+        })}
+        {navItems.filter((i) => i.primary).map((item) => {
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setSidebarOpen(false)}
+              className="flex items-center justify-center gap-2 rounded-lg bg-[#B8964C] px-3 py-2 text-sm font-semibold text-[#0D0F14] hover:bg-[#C9A64C] transition-colors mt-3"
+            >
+              <Icon size={16} />
               {item.label}
             </Link>
           );
