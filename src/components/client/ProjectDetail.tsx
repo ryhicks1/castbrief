@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { Badge, Button, Input } from "@/components/ui";
+import { Badge, Button, Input, KebabMenu } from "@/components/ui";
+import type { KebabMenuItem } from "@/components/ui";
 import {
   Users,
   Star,
@@ -20,6 +21,9 @@ import {
   FolderPlus,
   Folder,
   Trash2,
+  Pencil,
+  Copy,
+  FolderInput,
 } from "lucide-react";
 import DocumentSection from "./DocumentSection";
 import ScriptBreakdownModal from "./ScriptBreakdownModal";
@@ -398,12 +402,7 @@ export default function ProjectDetail({
 
       {/* Roles list - grouped by folders */}
       <div className="space-y-3">
-        {/* Ungrouped roles (no folder) */}
-        {ungroupedRoles.map((role) => (
-          <RoleCard key={role.id} role={role} project={project} requests={requests} />
-        ))}
-
-        {/* Folder sections */}
+        {/* Folder sections (appear first) */}
         {folders.map((folder) => {
           const folderRoles = folderRolesMap[folder.id] || [];
           const isCollapsed = collapsedFolders.has(folder.id);
@@ -445,7 +444,7 @@ export default function ProjectDetail({
                     </p>
                   ) : (
                     folderRoles.map((role) => (
-                      <RoleCard key={role.id} role={role} project={project} requests={requests} />
+                      <RoleCard key={role.id} role={role} project={project} requests={requests} folders={folders} onRefresh={() => router.refresh()} />
                     ))
                   )}
                 </div>
@@ -453,6 +452,11 @@ export default function ProjectDetail({
             </div>
           );
         })}
+
+        {/* Ungrouped roles (no folder) */}
+        {ungroupedRoles.map((role) => (
+          <RoleCard key={role.id} role={role} project={project} requests={requests} folders={folders} onRefresh={() => router.refresh()} />
+        ))}
       </div>
 
       {/* Requests tracking section */}
@@ -562,11 +566,18 @@ function RoleCard({
   role,
   project,
   requests,
+  folders = [],
+  onRefresh,
 }: {
   role: ProjectDetailProps["project"]["roles"][number];
   project: ProjectDetailProps["project"];
   requests: PackageRequest[];
+  folders?: FolderRecord[];
+  onRefresh?: () => void;
 }) {
+  const [renaming, setRenaming] = useState(false);
+  const [renameName, setRenameName] = useState(role.name);
+
   const allRoleTalents = role.role_packages?.flatMap(
     (rp) => rp.packages?.package_talents || []
   ) || [];
@@ -585,12 +596,81 @@ function RoleCard({
   const roleRequests = requests.filter((r) => r.role_id === role.id);
   const rolePending = roleRequests.filter((r) => r.status !== "responded").length;
 
+  async function handleRename() {
+    if (!renameName.trim() || renameName === role.name) { setRenaming(false); return; }
+    await fetch(`/api/roles/${role.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: renameName.trim() }),
+    });
+    setRenaming(false);
+    onRefresh?.();
+  }
+
+  async function handleDelete() {
+    if (!confirm(`Delete role "${role.name}"? This cannot be undone.`)) return;
+    await fetch(`/api/roles/${role.id}`, { method: "DELETE" });
+    onRefresh?.();
+  }
+
+  async function handleDuplicate() {
+    await fetch(`/api/roles/${role.id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    onRefresh?.();
+  }
+
+  async function handleMoveToFolder(folderId: string | null) {
+    await fetch(`/api/roles/${role.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ folder_id: folderId }),
+    });
+    onRefresh?.();
+  }
+
+  const folderMenuItems: KebabMenuItem[] = folders
+    .filter((f) => f.id !== role.folder_id)
+    .map((f) => ({
+      label: `Move to ${f.name}`,
+      icon: <FolderInput size={14} />,
+      onClick: () => handleMoveToFolder(f.id),
+    }));
+
+  if (role.folder_id) {
+    folderMenuItems.unshift({
+      label: "Remove from folder",
+      icon: <FolderInput size={14} />,
+      onClick: () => handleMoveToFolder(null),
+    });
+  }
+
+  const menuItems: KebabMenuItem[] = [
+    { label: "Rename", icon: <Pencil size={14} />, onClick: () => { setRenaming(true); setRenameName(role.name); } },
+    { label: "Duplicate", icon: <Copy size={14} />, onClick: handleDuplicate },
+    ...folderMenuItems,
+    { label: "Delete", icon: <Trash2 size={14} />, onClick: handleDelete, danger: true },
+  ];
+
   return (
     <div className="rounded-xl border border-[#1E2128] bg-[#161920] p-4">
       <div className="flex items-start justify-between mb-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-[#E8E3D8]">{role.name}</h3>
+            {renaming ? (
+              <input
+                value={renameName}
+                onChange={(e) => setRenameName(e.target.value)}
+                onBlur={handleRename}
+                onKeyDown={(e) => { if (e.key === "Enter") handleRename(); if (e.key === "Escape") setRenaming(false); }}
+                autoFocus
+                className="bg-transparent border-b border-[#C9A84C] text-sm font-semibold text-[#E8E3D8] outline-none px-0 py-0"
+              />
+            ) : (
+              <h3 className="font-semibold text-[#E8E3D8]">{role.name}</h3>
+            )}
             {rolePending > 0 && (
               <span className="flex items-center gap-1 text-[10px] text-amber-400">
                 <Clock size={10} />
@@ -605,6 +685,7 @@ function RoleCard({
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          <KebabMenu items={menuItems} />
           {talentCount > 0 && (
             <a
               href={`/api/reports/role/${role.id}?format=pdf&projectId=${project.id}`}
