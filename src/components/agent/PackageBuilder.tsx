@@ -5,6 +5,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button, Input, Chip } from "@/components/ui";
 import { TalentPhoto } from "@/components/ui/Avatar";
+import { LOCATIONS } from "@/lib/constants/locations";
+
+function getLocationCode(location: string): string {
+  const match = LOCATIONS.find(
+    (loc) => loc.city.toLowerCase() === location.toLowerCase()
+  );
+  if (match) return match.code;
+  return location.slice(0, 3).toUpperCase();
+}
 
 interface TalentChip {
   chip_id: string;
@@ -59,8 +68,9 @@ export default function PackageBuilder({
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [allowComments, setAllowComments] = useState(true);
-  const [allowHide, setAllowHide] = useState(false);
-  const [allowMedia, setAllowMedia] = useState(false);
+  const [allowHide, setAllowHide] = useState(true);
+  const [allowMedia, setAllowMedia] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
   const [expiryEnabled, setExpiryEnabled] = useState(false);
   const [expiryDate, setExpiryDate] = useState("");
 
@@ -284,15 +294,64 @@ export default function PackageBuilder({
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 h-[calc(100vh-7rem)]">
-      {/* LEFT — Talent Selector */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl font-bold text-[#E8E3D8]">New Package</h1>
+    <div className="flex flex-col h-[calc(100vh-7rem)]">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-xl font-bold text-[#E8E3D8]">New Package</h1>
+        <div className="flex items-center gap-3">
           <span className="text-sm text-[#B8964C]">
             {selected.size} talent selected
           </span>
+          <Button
+            onClick={() => {
+              if (selected.size === 0) {
+                setError("Select at least one talent");
+                return;
+              }
+              setShowSettings(true);
+            }}
+            size="sm"
+          >
+            Generate Package Link →
+          </Button>
         </div>
+      </div>
+
+      {/* Settings modal */}
+      {showSettings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-[#1E2128] bg-[#13151A] p-6 shadow-2xl mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-[#E8E3D8]">Package Settings</h2>
+              <button onClick={() => setShowSettings(false)} className="text-[#8B8D93] hover:text-[#E8E3D8] transition">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <div className="space-y-4">
+              <Input id="pkg-name" label="Package Name *" value={packageName} onChange={(e) => setPackageName(e.target.value)} placeholder="e.g. Netflix Pilot Selects" />
+              <Input id="client-name" label="Client / Recipient" value={clientName} onChange={(e) => setClientName(e.target.value)} />
+              <Input id="client-email" label="Client Email" type="email" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} />
+              <div className="space-y-3 pt-2">
+                <Toggle label="Allow comments" checked={allowComments} onChange={setAllowComments} />
+                <Toggle label="Allow client to hide talent" checked={allowHide} onChange={setAllowHide} />
+                <Toggle label="Allow media / form requests" checked={allowMedia} onChange={setAllowMedia} />
+              </div>
+              <div className="pt-2 border-t border-[#2A2D35]">
+                <Toggle label="Set expiry date" checked={expiryEnabled} onChange={setExpiryEnabled} />
+                {expiryEnabled && (
+                  <input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} className="mt-2 w-full rounded-lg border border-[#1E2128] bg-[#0F0F12] px-3 py-2 text-sm text-[#E8E3D8] focus:border-[#B8964C] focus:outline-none" />
+                )}
+              </div>
+              <div className="text-xs text-[#8B8D93]">{selected.size} talent selected</div>
+              {error && <p className="text-xs text-red-400">{error}</p>}
+              <Button onClick={handleGenerate} loading={loading} className="w-full">Generate Package Link</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Talent Selector - full width */}
+      <div className="flex-1 flex flex-col min-w-0">
 
         <input
           type="text"
@@ -393,40 +452,35 @@ export default function PackageBuilder({
         </div>
 
         <div className="flex-1 overflow-y-auto pr-1">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
             {filtered.map((talent) => (
               <label
                 key={talent.id}
-                className={`group relative rounded-xl overflow-hidden cursor-pointer shadow-lg shadow-black/20 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/30 transition-all duration-300 ${
+                onClick={() => toggleSelect(talent.id)}
+                className={`group relative rounded-xl overflow-hidden cursor-pointer shadow-lg shadow-black/20 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/30 transition-all duration-300 ${
                   selected.has(talent.id)
-                    ? "ring-1 ring-[#B8964C] shadow-[0_0_24px_rgba(184,150,76,0.12)]"
+                    ? "ring-2 ring-[#B8964C] shadow-[0_0_24px_rgba(184,150,76,0.12)]"
                     : "ring-1 ring-[#1E2128] hover:ring-[#2A2D35]"
                 } bg-[#13151A]`}
               >
-                {/* Photo area */}
-                <div className="relative">
+                <div className="relative" style={{ aspectRatio: "3/4" }}>
                   <TalentPhoto
                     photo_url={talent.photo_url}
                     name={talent.full_name}
                     size="md"
-                    aspectRatio="4/5"
+                    aspectRatio="3/4"
                   />
 
-                  {/* Checkbox overlay on top-right corner */}
-                  <div className="absolute top-2 right-2 z-10">
+                  {/* Checkbox overlay */}
+                  <div className="absolute top-1.5 right-1.5 z-10">
                     <div
-                      className="flex items-center justify-center w-8 h-8 md:w-6 md:h-6 rounded border-2 transition-colors"
+                      className="flex items-center justify-center w-6 h-6 rounded border-2 transition-colors"
                       style={{
                         borderColor: selected.has(talent.id) ? "#B8964C" : "#8B8D93",
                         backgroundColor: selected.has(talent.id) ? "#B8964C" : "rgba(15,15,18,0.6)",
                       }}
                     >
-                      <input
-                        type="checkbox"
-                        checked={selected.has(talent.id)}
-                        onChange={() => toggleSelect(talent.id)}
-                        className="sr-only"
-                      />
+                      <input type="checkbox" checked={selected.has(talent.id)} onChange={() => {}} className="sr-only" />
                       {selected.has(talent.id) && (
                         <svg className="w-3 h-3 text-[#0F0F12]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -434,127 +488,21 @@ export default function PackageBuilder({
                       )}
                     </div>
                   </div>
-                </div>
 
-                {/* Name + details below photo */}
-                <div className="p-1.5">
-                  <div className="text-xs font-medium text-[#E8E3D8] truncate">
-                    {talent.full_name}
+                  {/* Name/age/location overlay */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-1.5">
+                    <p className="text-xs font-semibold text-white truncate">{talent.full_name}</p>
+                    <p className="text-[10px] text-white/70">
+                      {talent.age ? `${talent.age}` : ""}{talent.location ? ` · ${getLocationCode(talent.location)}` : ""}
+                    </p>
                   </div>
-                  {talent.age && (
-                    <div className="text-[10px] text-[#8B8D93]">
-                      Age {talent.age}
-                    </div>
-                  )}
-                  {talent.talent_chips.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {talent.talent_chips.slice(0, 2).map((tc) => (
-                        <Chip
-                          key={tc.chip_id}
-                          label={tc.chips.label}
-                          color={tc.chips.color}
-                          active
-                        />
-                      ))}
-                    </div>
-                  )}
                 </div>
               </label>
             ))}
           </div>
         </div>
-      </div>
 
-      {/* RIGHT — Package Config */}
-      <div className="w-full lg:w-80 lg:shrink-0 order-first lg:order-none overflow-y-auto">
-        <div className="sticky top-0 rounded-xl bg-[#13151A] p-5 space-y-4 shadow-lg shadow-black/20">
-          <div className="text-xs font-semibold uppercase tracking-wider text-[#B8964C]">
-            Package Settings
-          </div>
-
-          <Input
-            id="pkg-name"
-            label="Package Name *"
-            value={packageName}
-            onChange={(e) => setPackageName(e.target.value)}
-            placeholder="e.g. Netflix Pilot Selects"
-          />
-
-          <Input
-            id="client-name"
-            label="Client / Recipient"
-            value={clientName}
-            onChange={(e) => setClientName(e.target.value)}
-          />
-
-          <Input
-            id="client-email"
-            label="Client Email"
-            type="email"
-            value={clientEmail}
-            onChange={(e) => setClientEmail(e.target.value)}
-          />
-
-          <div className="space-y-3 pt-2">
-            <Toggle
-              label="Allow comments"
-              checked={allowComments}
-              onChange={setAllowComments}
-            />
-            <Toggle
-              label="Allow client to hide talent"
-              checked={allowHide}
-              onChange={setAllowHide}
-            />
-            <Toggle
-              label="Allow media / form requests"
-              checked={allowMedia}
-              onChange={setAllowMedia}
-            />
-          </div>
-
-          {selectedTalents.length > 0 && (
-            <div className="pt-2 border-t border-[#2A2D35]">
-              <div className="text-xs text-[#8B8D93] mb-1">
-                {selectedTalents.length} talent selected
-              </div>
-              <div className="text-xs text-[#E8E3D8]">
-                {selectedTalents
-                  .slice(0, 5)
-                  .map((t) => t.full_name)
-                  .join(", ")}
-                {selectedTalents.length > 5 &&
-                  ` +${selectedTalents.length - 5} more`}
-              </div>
-            </div>
-          )}
-
-          <div className="pt-2 border-t border-[#2A2D35]">
-            <Toggle
-              label="Set expiry date"
-              checked={expiryEnabled}
-              onChange={setExpiryEnabled}
-            />
-            {expiryEnabled && (
-              <input
-                type="date"
-                value={expiryDate}
-                onChange={(e) => setExpiryDate(e.target.value)}
-                className="mt-2 w-full rounded-lg border border-[#1E2128] bg-[#0F0F12] px-3 py-2 text-sm text-[#E8E3D8] focus:border-[#B8964C] focus:outline-none transition-all duration-300"
-              />
-            )}
-          </div>
-
-          {error && <p className="text-xs text-red-400">{error}</p>}
-
-          <Button
-            onClick={handleGenerate}
-            loading={loading}
-            className="w-full"
-          >
-            Generate Package Link
-          </Button>
-        </div>
+        {error && !showSettings && <p className="mt-2 text-xs text-red-400">{error}</p>}
       </div>
     </div>
   );
