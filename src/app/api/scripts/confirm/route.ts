@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generateSides } from "@/lib/scripts/sides";
+import { refreshAccessToken, createFolder } from "@/lib/dropbox/client";
 
 export const maxDuration = 60;
 
@@ -152,6 +153,48 @@ export async function POST(request: Request) {
           );
         }
       }
+    }
+
+    // Create Dropbox folders for the created roles (non-blocking)
+    try {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("dropbox_refresh_token")
+        .eq("id", user.id)
+        .single();
+
+      if (profile?.dropbox_refresh_token) {
+        const accessToken = await refreshAccessToken(profile.dropbox_refresh_token);
+
+        // Get project name for folder path
+        const { data: projectData } = await supabase
+          .from("projects")
+          .select("name")
+          .eq("id", project_id)
+          .single();
+
+        if (projectData?.name) {
+          for (const role of createdRoles) {
+            try {
+              await createFolder(
+                accessToken,
+                `/CastingBrief/${projectData.name}/${role.name}`
+              );
+            } catch (folderErr: any) {
+              // Swallow "folder already exists" (409) errors
+              if (!folderErr.message?.includes("409")) {
+                console.error(
+                  "Dropbox folder creation failed for role:",
+                  role.name,
+                  folderErr
+                );
+              }
+            }
+          }
+        }
+      }
+    } catch (dropboxErr) {
+      console.error("Dropbox folder mirroring failed (non-blocking):", dropboxErr);
     }
 
     return NextResponse.json({

@@ -63,6 +63,17 @@ export default function NewProjectPage() {
       return;
     }
 
+    // Create Dropbox folder for the project (non-blocking)
+    try {
+      await fetch("/api/dropbox/create-folder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: `/CastingBrief/${name.trim()}` }),
+      });
+    } catch (err) {
+      console.error("Dropbox folder creation failed (non-blocking):", err);
+    }
+
     router.push(`/client/projects/${data.id}`);
   }
 

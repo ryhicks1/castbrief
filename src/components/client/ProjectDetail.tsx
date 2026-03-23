@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -150,6 +150,22 @@ export default function ProjectDetail({
   const [openCallFormUrl, setOpenCallFormUrl] = useState(project.open_call_form_url ?? null);
   const [openCallShowProjectDocs, setOpenCallShowProjectDocs] = useState(project.open_call_show_project_docs ?? true);
   const [openCallShowRoleDocs, setOpenCallShowRoleDocs] = useState(project.open_call_show_role_docs ?? true);
+  const [dropboxConnected, setDropboxConnected] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    async function checkDropbox() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("dropbox_token")
+        .eq("id", user.id)
+        .single();
+      setDropboxConnected(!!data?.dropbox_token);
+    }
+    checkDropbox();
+  }, []);
 
   const statusColors: Record<string, string> = {
     active: "text-green-400 bg-green-400/10",
@@ -212,6 +228,19 @@ export default function ProjectDetail({
       folder_id: roleFolderId || null,
     });
 
+    // Create Dropbox folder for the role (non-blocking)
+    try {
+      await fetch("/api/dropbox/create-folder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          path: `/CastingBrief/${project.name}/${roleName.trim()}`,
+        }),
+      });
+    } catch (err) {
+      console.error("Dropbox role folder creation failed (non-blocking):", err);
+    }
+
     setRoleName("");
     setRoleBrief("");
     setRoleFolderId("");
@@ -233,6 +262,20 @@ export default function ProjectDetail({
           name: newFolderName.trim(),
         }),
       });
+
+      // Create Dropbox folder for the episode/folder (non-blocking)
+      try {
+        await fetch("/api/dropbox/create-folder", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            path: `/CastingBrief/${project.name}/${newFolderName.trim()}`,
+          }),
+        });
+      } catch (err) {
+        console.error("Dropbox folder creation failed (non-blocking):", err);
+      }
+
       setNewFolderName("");
       setShowFolderInput(false);
       router.refresh();
@@ -326,6 +369,21 @@ export default function ProjectDetail({
               <Globe size={13} />
               Edit Open Call
             </button>
+          )}
+          {dropboxConnected === true && (
+            <span className="flex items-center gap-1 text-[10px] text-[#8B8D93]" title="Dropbox connected">
+              <FolderInput size={12} className="text-[#B8964C]" />
+              Dropbox
+            </span>
+          )}
+          {dropboxConnected === false && (
+            <Link
+              href="/client/dropbox-connect"
+              className="flex items-center gap-1 text-[10px] text-[#B8964C] hover:text-[#C9A64C] transition"
+            >
+              <FolderInput size={12} />
+              Connect Dropbox
+            </Link>
           )}
         </div>
         {project.brand && (

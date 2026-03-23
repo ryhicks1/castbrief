@@ -12,6 +12,8 @@ export default function OnboardingPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [showDropboxStep, setShowDropboxStep] = useState(false);
+  const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -132,17 +134,27 @@ export default function OnboardingPage() {
     const params = new URLSearchParams(window.location.search);
     const inviteToken = params.get("invite");
 
+    let dest: string;
     if (inviteToken) {
-      router.push(`/join/${inviteToken}`);
+      dest = `/join/${inviteToken}`;
     } else {
-      const dest =
+      dest =
         role === "agent"
           ? "/agent/dashboard"
           : role === "talent"
             ? "/talent/profile"
             : "/client/projects";
-      router.push(dest);
     }
+
+    // Show Dropbox connect step for clients before redirecting
+    if (role === "client") {
+      setPendingRedirect(dest);
+      setShowDropboxStep(true);
+      setLoading(false);
+      return;
+    }
+
+    router.push(dest);
     router.refresh();
   }
 
@@ -150,6 +162,49 @@ export default function OnboardingPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#0D0F14]">
         <p className="text-[#8B8D93]">Loading...</p>
+      </div>
+    );
+  }
+
+  if (showDropboxStep) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#0D0F14] px-4">
+        <div className="w-full max-w-md">
+          <div className="mb-8 text-center">
+            <span className="text-2xl font-bold text-[#C9A84C]">CastingBrief</span>
+          </div>
+
+          <div className="rounded-xl border border-[#1E2128] bg-[#161920] p-6 sm:p-8 text-center">
+            <div className="text-4xl mb-4">&#x1F4C1;</div>
+            <h1 className="mb-2 text-xl font-bold text-[#E8E3D8]">
+              Connect Dropbox
+            </h1>
+            <p className="mb-6 text-sm text-[#8B8D93]">
+              Automatically organize your casting projects with folders for each
+              project and role in your Dropbox.
+            </p>
+
+            <div className="space-y-3">
+              <a
+                href="/client/dropbox-connect"
+                className="block w-full rounded-lg bg-gradient-to-r from-[#C9A84C] to-[#B8943F] px-4 py-2.5 text-sm font-semibold text-[#0D0F14] hover:from-[#D4B35C] hover:to-[#C9A84C] transition-colors text-center"
+              >
+                Connect Dropbox
+              </a>
+              <button
+                onClick={() => {
+                  if (pendingRedirect) {
+                    router.push(pendingRedirect);
+                    router.refresh();
+                  }
+                }}
+                className="block w-full text-sm text-[#8B8D93] hover:text-[#E8E3D8] transition-colors py-2"
+              >
+                Skip for now
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

@@ -17,6 +17,7 @@ export default function ClientShell({ children }: { children: React.ReactNode })
   const router = useRouter();
   const [name, setName] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [dropboxConnected, setDropboxConnected] = useState(true);
 
   useEffect(() => {
     async function loadProfile() {
@@ -25,10 +26,13 @@ export default function ClientShell({ children }: { children: React.ReactNode })
       if (!user) return;
       const { data } = await supabase
         .from("profiles")
-        .select("full_name")
+        .select("full_name, dropbox_token")
         .eq("id", user.id)
         .single();
-      if (data) setName(data.full_name || "Client");
+      if (data) {
+        setName(data.full_name || "Client");
+        setDropboxConnected(!!data.dropbox_token);
+      }
     }
     loadProfile();
   }, []);
@@ -72,6 +76,18 @@ export default function ClientShell({ children }: { children: React.ReactNode })
           );
         })}
       </nav>
+      {!dropboxConnected && (
+        <div className="mx-2 mb-3">
+          <Link
+            href="/client/dropbox-connect"
+            onClick={() => setSidebarOpen(false)}
+            className="block rounded-lg bg-[#B8964C]/10 border border-[#B8964C]/20 px-3 py-2 text-xs text-[#B8964C] hover:bg-[#B8964C]/15 transition"
+          >
+            &#x26A0; Connect your Dropbox for automatic file organization{" "}
+            <span className="underline">Connect now</span>
+          </Link>
+        </div>
+      )}
     </>
   );
 
