@@ -31,6 +31,7 @@ export async function PATCH(
     if (body.name !== undefined) updates.name = body.name;
     if (body.brief !== undefined) updates.brief = body.brief;
     if (body.folder_id !== undefined) updates.folder_id = body.folder_id || null;
+    if (body.open_call_visible !== undefined) updates.open_call_visible = body.open_call_visible;
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ error: "No fields to update" }, { status: 400 });

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import crypto from "crypto";
 
 export async function PATCH(
   request: Request,
@@ -28,10 +29,23 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const allowed = ["name", "status", "brand", "type", "deadline"];
+    const allowed = ["name", "status", "brand", "type", "deadline", "open_call_enabled"];
     const updates: Record<string, any> = {};
     for (const key of allowed) {
       if (key in body) updates[key] = body[key];
+    }
+
+    // When enabling open call for the first time, generate a token
+    if (body.open_call_enabled === true) {
+      const { data: currentProject } = await supabase
+        .from("projects")
+        .select("open_call_token")
+        .eq("id", id)
+        .single();
+
+      if (!currentProject?.open_call_token) {
+        updates.open_call_token = crypto.randomBytes(12).toString("hex");
+      }
     }
 
     if (Object.keys(updates).length === 0) {

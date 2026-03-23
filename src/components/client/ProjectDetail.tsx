@@ -24,6 +24,11 @@ import {
   Pencil,
   Copy,
   FolderInput,
+  Globe,
+  Eye,
+  EyeOff,
+  ClipboardList,
+  Link as LinkIcon,
 } from "lucide-react";
 import DocumentSection from "./DocumentSection";
 import ScriptBreakdownModal from "./ScriptBreakdownModal";
@@ -82,11 +87,14 @@ interface ProjectDetailProps {
     type: string;
     status: string;
     deadline: string | null;
+    open_call_enabled?: boolean;
+    open_call_token?: string | null;
     roles: {
       id: string;
       name: string;
       brief: string | null;
       folder_id?: string | null;
+      open_call_visible?: boolean;
       role_packages: {
         id: string;
         package_id: string;
@@ -130,6 +138,10 @@ export default function ProjectDetail({
   const [newFolderName, setNewFolderName] = useState("");
   const [showFolderInput, setShowFolderInput] = useState(false);
   const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
+  const [openCallEnabled, setOpenCallEnabled] = useState(project.open_call_enabled ?? false);
+  const [openCallToken, setOpenCallToken] = useState(project.open_call_token ?? null);
+  const [openCallCopied, setOpenCallCopied] = useState(false);
+  const [togglingOpenCall, setTogglingOpenCall] = useState(false);
 
   const statusColors: Record<string, string> = {
     active: "text-green-400 bg-green-400/10",
@@ -232,6 +244,35 @@ export default function ProjectDetail({
     }
   }
 
+  async function handleToggleOpenCall() {
+    setTogglingOpenCall(true);
+    try {
+      const newValue = !openCallEnabled;
+      const res = await fetch(`/api/projects/${project.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ open_call_enabled: newValue }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setOpenCallEnabled(data.open_call_enabled);
+        if (data.open_call_token) setOpenCallToken(data.open_call_token);
+      }
+    } catch (err) {
+      console.error("Failed to toggle open call:", err);
+    } finally {
+      setTogglingOpenCall(false);
+    }
+  }
+
+  function copyOpenCallLink() {
+    if (!openCallToken) return;
+    const link = `${window.location.origin}/open-call/${openCallToken}`;
+    navigator.clipboard.writeText(link);
+    setOpenCallCopied(true);
+    setTimeout(() => setOpenCallCopied(false), 2000);
+  }
+
   return (
     <div>
       {/* Breadcrumb */}
@@ -263,11 +304,47 @@ export default function ProjectDetail({
               Share
             </button>
           )}
+          {isOwner && (
+            <button
+              onClick={handleToggleOpenCall}
+              disabled={togglingOpenCall}
+              className={`flex items-center gap-1.5 rounded-lg border px-3 py-1 text-xs transition ${
+                openCallEnabled
+                  ? "border-[#C9A84C]/30 bg-[#C9A84C]/10 text-[#C9A84C]"
+                  : "border-[#1E2128] bg-[#161920] text-[#8B8D93] hover:text-[#E8E3D8] hover:border-[#2A2D35]"
+              }`}
+            >
+              <Globe size={13} />
+              {openCallEnabled ? "Open Call On" : "Open Call"}
+            </button>
+          )}
         </div>
         {project.brand && (
           <p className="text-sm text-[#8B8D93]">
             {project.brand} &middot; {project.type}
           </p>
+        )}
+        {openCallEnabled && openCallToken && (
+          <div className="flex items-center gap-2 mt-3 p-2 rounded-lg border border-[#C9A84C]/20 bg-[#C9A84C]/5">
+            <Globe size={14} className="text-[#C9A84C] shrink-0" />
+            <span className="text-xs text-[#8B8D93] truncate">
+              {typeof window !== "undefined" ? `${window.location.origin}/open-call/${openCallToken}` : `/open-call/${openCallToken}`}
+            </span>
+            <button
+              onClick={copyOpenCallLink}
+              className="flex items-center gap-1 shrink-0 rounded border border-[#C9A84C]/30 bg-[#C9A84C]/10 px-2 py-0.5 text-[10px] text-[#C9A84C] hover:bg-[#C9A84C]/20 transition"
+            >
+              <LinkIcon size={10} />
+              {openCallCopied ? "Copied!" : "Copy Link"}
+            </button>
+            <Link
+              href={`/client/projects/${project.id}/submissions`}
+              className="flex items-center gap-1 shrink-0 rounded border border-[#1E2128] bg-[#161920] px-2 py-0.5 text-[10px] text-[#8B8D93] hover:text-[#E8E3D8] transition"
+            >
+              <ClipboardList size={10} />
+              View Submissions
+            </Link>
+          </div>
         )}
         <div className="flex gap-3 mt-4">
           <Link
@@ -444,7 +521,7 @@ export default function ProjectDetail({
                     </p>
                   ) : (
                     folderRoles.map((role) => (
-                      <RoleCard key={role.id} role={role} project={project} requests={requests} folders={folders} onRefresh={() => router.refresh()} />
+                      <RoleCard key={role.id} role={role} project={project} requests={requests} folders={folders} onRefresh={() => router.refresh()} openCallEnabled={openCallEnabled} />
                     ))
                   )}
                 </div>
@@ -455,7 +532,7 @@ export default function ProjectDetail({
 
         {/* Ungrouped roles (no folder) */}
         {ungroupedRoles.map((role) => (
-          <RoleCard key={role.id} role={role} project={project} requests={requests} folders={folders} onRefresh={() => router.refresh()} />
+          <RoleCard key={role.id} role={role} project={project} requests={requests} folders={folders} onRefresh={() => router.refresh()} openCallEnabled={openCallEnabled} />
         ))}
       </div>
 
@@ -568,12 +645,14 @@ function RoleCard({
   requests,
   folders = [],
   onRefresh,
+  openCallEnabled = false,
 }: {
   role: ProjectDetailProps["project"]["roles"][number];
   project: ProjectDetailProps["project"];
   requests: PackageRequest[];
   folders?: FolderRecord[];
   onRefresh?: () => void;
+  openCallEnabled?: boolean;
 }) {
   const [renaming, setRenaming] = useState(false);
   const [renameName, setRenameName] = useState(role.name);
@@ -631,6 +710,15 @@ function RoleCard({
     onRefresh?.();
   }
 
+  async function handleToggleOpenCallVisible() {
+    await fetch(`/api/roles/${role.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ open_call_visible: !role.open_call_visible }),
+    });
+    onRefresh?.();
+  }
+
   const folderMenuItems: KebabMenuItem[] = folders
     .filter((f) => f.id !== role.folder_id)
     .map((f) => ({
@@ -651,6 +739,15 @@ function RoleCard({
     { label: "Rename", icon: <Pencil size={14} />, onClick: () => { setRenaming(true); setRenameName(role.name); } },
     { label: "Duplicate", icon: <Copy size={14} />, onClick: handleDuplicate },
     ...folderMenuItems,
+    ...(openCallEnabled
+      ? [
+          {
+            label: role.open_call_visible ? "Hide from Open Call" : "Show in Open Call",
+            icon: role.open_call_visible ? <EyeOff size={14} /> : <Eye size={14} />,
+            onClick: handleToggleOpenCallVisible,
+          },
+        ]
+      : []),
     { label: "Delete", icon: <Trash2 size={14} />, onClick: handleDelete, danger: true },
   ];
 

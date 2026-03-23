@@ -17,7 +17,8 @@ export default async function ProjectPage({
     .from("projects")
     .select(`
       id, name, brand, type, status, deadline, client_id,
-      roles(id, name, brief, folder_id)
+      open_call_enabled, open_call_token,
+      roles(id, name, brief, folder_id, open_call_visible)
     `)
     .eq("id", id)
     .single();
