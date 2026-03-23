@@ -4,10 +4,13 @@ import RoleDetail from "@/components/client/RoleDetail";
 
 export default async function RolePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string; roleId: string }>;
+  searchParams: Promise<{ view?: string }>;
 }) {
   const { id: projectId, roleId } = await params;
+  const resolvedSearchParams = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
@@ -38,7 +41,7 @@ export default async function RolePage({
       packages(
         id, name, token, agent_id,
         package_talents(
-          id, talent_id, client_pick, client_comment, is_hidden_by_client, media_requested, upload_status,
+          id, talent_id, client_pick, client_status, client_rating, client_comment, is_hidden_by_client, media_requested, upload_status,
           talents(
             id, full_name, age, location, cultural_background, height_cm, weight_kg, photo_url, links,
             talent_chips(chip_id, chips(id, label, color))
@@ -85,6 +88,7 @@ export default async function RolePage({
       projectId={projectId}
       projectName={project.name}
       documents={documents || []}
+      initialView={(resolvedSearchParams.view as "all" | "new" | "selections") || "all"}
     />
   );
 }

@@ -112,6 +112,8 @@ interface ProjectDetailProps {
             id: string;
             talent_id: string;
             client_pick: boolean;
+            client_status?: string | null;
+            is_hidden_by_client?: boolean;
             media_requested?: boolean;
             upload_status?: string;
             talents: { id: string; full_name: string; photo_url: string | null };
@@ -764,6 +766,8 @@ function RoleCard({
   ) || [];
   const talentCount = allRoleTalents.length;
   const pickCount = allRoleTalents.filter((t) => t.client_pick).length;
+  const newCount = allRoleTalents.filter((t) => !t.client_status && !t.is_hidden_by_client).length;
+  const selectionsCount = allRoleTalents.filter((t) => t.client_status === "yes" || t.client_pick).length;
   const mediaRequested = allRoleTalents.filter((t: any) => t.media_requested).length;
   const mediaUploaded = allRoleTalents.filter((t: any) => t.upload_status === "uploaded").length;
   const agentIds = [
@@ -930,13 +934,27 @@ function RoleCard({
               <FileDown size={12} />
             </a>
           )}
-          <Link
-            href={`/client/projects/${project.id}/roles/${role.id}`}
-            className="flex items-center gap-1 text-xs text-[#C9A84C] hover:underline"
-          >
-            Review Talent
-            <ChevronRight size={12} />
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href={`/client/projects/${project.id}/roles/${role.id}?view=all`}
+              className="text-xs text-[#8B8D93] hover:text-[#E8E3D8] transition"
+            >
+              All Talent <span className="text-[#C9A84C]">({talentCount})</span>
+            </Link>
+            <Link
+              href={`/client/projects/${project.id}/roles/${role.id}?view=new`}
+              className="text-xs text-[#8B8D93] hover:text-[#E8E3D8] transition"
+            >
+              New <span className="text-[#C9A84C]">({newCount})</span>
+            </Link>
+            <Link
+              href={`/client/projects/${project.id}/roles/${role.id}?view=selections`}
+              className="text-xs text-[#8B8D93] hover:text-[#E8E3D8] transition"
+            >
+              Selections <span className="text-[#C9A84C]">({selectionsCount})</span>
+            </Link>
+            <ChevronRight size={12} className="text-[#8B8D93]" />
+          </div>
         </div>
       </div>
       )}

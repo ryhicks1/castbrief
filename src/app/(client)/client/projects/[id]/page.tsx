@@ -66,7 +66,7 @@ export default async function ProjectPage({
         packages(
           id, name, agent_id, token,
           package_talents(
-            id, talent_id, client_pick, client_comment, is_hidden_by_client, media_requested, upload_status,
+            id, talent_id, client_pick, client_status, client_comment, is_hidden_by_client, media_requested, upload_status,
             talents(id, full_name, age, location, cultural_background, height_cm, weight_kg, photo_url, links)
           )
         )
