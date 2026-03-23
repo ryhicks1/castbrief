@@ -15,7 +15,7 @@ export default async function NewPackagePage() {
 
   const { data: talents } = await supabase
     .from("talents")
-    .select("id, full_name, age, photo_url, talent_chips(chip_id, chips(id, label, color))")
+    .select("id, full_name, age, gender, location, cultural_background, special_skills, photo_url, talent_chips(chip_id, chips(id, label, color))")
     .eq(orgFilter(orgMembership.orgId, user.id).column, orgFilter(orgMembership.orgId, user.id).value)
     .order("full_name");
 

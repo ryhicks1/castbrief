@@ -15,6 +15,10 @@ interface Talent {
   id: string;
   full_name: string;
   age: number | null;
+  gender: string | null;
+  location: string | null;
+  cultural_background: string | null;
+  special_skills: string[] | null;
   photo_url: string | null;
   talent_chips: TalentChip[];
 }
@@ -43,6 +47,13 @@ export default function PackageBuilder({
   const [search, setSearch] = useState("");
   const [activeChips, setActiveChips] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set(preselected));
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterGender, setFilterGender] = useState<string>("");
+  const [filterAgeMin, setFilterAgeMin] = useState<string>("");
+  const [filterAgeMax, setFilterAgeMax] = useState<string>("");
+  const [filterEthnicity, setFilterEthnicity] = useState<string>("");
+  const [filterLocation, setFilterLocation] = useState<string>("");
+  const [filterSkill, setFilterSkill] = useState<string>("");
 
   const [packageName, setPackageName] = useState("");
   const [clientName, setClientName] = useState("");
@@ -61,6 +72,8 @@ export default function PackageBuilder({
   const [emailSent, setEmailSent] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
 
+  const hasActiveFilters = filterGender || filterAgeMin || filterAgeMax || filterEthnicity || filterLocation || filterSkill;
+
   const filtered = useMemo(() => {
     return talents.filter((t) => {
       const q = search.toLowerCase();
@@ -71,9 +84,43 @@ export default function PackageBuilder({
       const matchesChips =
         activeChips.size === 0 ||
         t.talent_chips.some((tc) => activeChips.has(tc.chip_id));
-      return matchesSearch && matchesChips;
+      const matchesGender =
+        !filterGender || (t.gender && t.gender.toLowerCase() === filterGender.toLowerCase());
+      const matchesAgeMin =
+        !filterAgeMin || (t.age != null && t.age >= parseInt(filterAgeMin));
+      const matchesAgeMax =
+        !filterAgeMax || (t.age != null && t.age <= parseInt(filterAgeMax));
+      const matchesEthnicity =
+        !filterEthnicity ||
+        (t.cultural_background && t.cultural_background.toLowerCase().includes(filterEthnicity.toLowerCase()));
+      const matchesLocation =
+        !filterLocation ||
+        (t.location && t.location.toLowerCase().includes(filterLocation.toLowerCase()));
+      const matchesSkill =
+        !filterSkill ||
+        (t.special_skills && t.special_skills.some((s) => s.toLowerCase().includes(filterSkill.toLowerCase())));
+      return matchesSearch && matchesChips && matchesGender && matchesAgeMin && matchesAgeMax && matchesEthnicity && matchesLocation && matchesSkill;
     });
-  }, [talents, search, activeChips]);
+  }, [talents, search, activeChips, filterGender, filterAgeMin, filterAgeMax, filterEthnicity, filterLocation, filterSkill]);
+
+  // Extract unique values for filter dropdowns
+  const uniqueGenders = useMemo(() => [...new Set(talents.map((t) => t.gender).filter(Boolean) as string[])].sort(), [talents]);
+  const uniqueLocations = useMemo(() => [...new Set(talents.map((t) => t.location).filter(Boolean) as string[])].sort(), [talents]);
+  const uniqueEthnicities = useMemo(() => [...new Set(talents.map((t) => t.cultural_background).filter(Boolean) as string[])].sort(), [talents]);
+  const uniqueSkills = useMemo(() => {
+    const skills = new Set<string>();
+    talents.forEach((t) => t.special_skills?.forEach((s) => skills.add(s)));
+    return [...skills].sort();
+  }, [talents]);
+
+  function clearFilters() {
+    setFilterGender("");
+    setFilterAgeMin("");
+    setFilterAgeMax("");
+    setFilterEthnicity("");
+    setFilterLocation("");
+    setFilterSkill("");
+  }
 
   function toggleChipFilter(chipId: string) {
     setActiveChips((prev) => {
@@ -255,8 +302,26 @@ export default function PackageBuilder({
           className="mb-3 w-full rounded-lg border border-[#1E2128] bg-[#0F0F12] px-3 py-2 text-sm text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#B8964C] focus:outline-none transition-all duration-300"
         />
 
-        {chips.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-3">
+        {/* Filter toggle + chips */}
+        <div className="flex items-center gap-2 mb-3">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+              showFilters || hasActiveFilters
+                ? "bg-[#B8964C]/20 text-[#B8964C] border border-[#B8964C]/30"
+                : "bg-[#1E2128] text-[#8B8D93] border border-[#2A2D35] hover:text-[#E8E3D8]"
+            }`}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+            Filters
+            {hasActiveFilters && <span className="ml-1 text-[10px]">●</span>}
+          </button>
+          {hasActiveFilters && (
+            <button onClick={clearFilters} className="text-[10px] text-[#8B8D93] hover:text-red-400 transition">
+              Clear all
+            </button>
+          )}
+          <div className="flex-1 flex flex-wrap gap-1.5 overflow-hidden">
             {chips.map((chip) => (
               <Chip
                 key={chip.id}
@@ -266,6 +331,55 @@ export default function PackageBuilder({
                 onClick={() => toggleChipFilter(chip.id)}
               />
             ))}
+          </div>
+        </div>
+
+        {/* Filter panel */}
+        {showFilters && (
+          <div className="mb-3 rounded-lg border border-[#1E2128] bg-[#13151A] p-3 grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <FilterSelect
+              label="Gender"
+              value={filterGender}
+              onChange={setFilterGender}
+              options={uniqueGenders.length > 0 ? uniqueGenders : ["Male", "Female", "Non-binary", "Other"]}
+            />
+            <div>
+              <label className="block text-[10px] text-[#8B8D93] mb-0.5">Age Range</label>
+              <div className="flex gap-1">
+                <input
+                  type="number"
+                  placeholder="Min"
+                  value={filterAgeMin}
+                  onChange={(e) => setFilterAgeMin(e.target.value)}
+                  className="w-full rounded border border-[#2A2D35] bg-[#0D0F14] px-2 py-1 text-xs text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#B8964C] focus:outline-none"
+                />
+                <input
+                  type="number"
+                  placeholder="Max"
+                  value={filterAgeMax}
+                  onChange={(e) => setFilterAgeMax(e.target.value)}
+                  className="w-full rounded border border-[#2A2D35] bg-[#0D0F14] px-2 py-1 text-xs text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#B8964C] focus:outline-none"
+                />
+              </div>
+            </div>
+            <FilterSelect
+              label="Ethnicity"
+              value={filterEthnicity}
+              onChange={setFilterEthnicity}
+              options={uniqueEthnicities}
+            />
+            <FilterSelect
+              label="Location"
+              value={filterLocation}
+              onChange={setFilterLocation}
+              options={uniqueLocations}
+            />
+            <FilterSelect
+              label="Skills"
+              value={filterSkill}
+              onChange={setFilterSkill}
+              options={uniqueSkills}
+            />
           </div>
         )}
 
@@ -474,5 +588,35 @@ function Toggle({
         />
       </button>
     </label>
+  );
+}
+
+function FilterSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+}) {
+  return (
+    <div>
+      <label className="block text-[10px] text-[#8B8D93] mb-0.5">{label}</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded border border-[#2A2D35] bg-[#0D0F14] px-2 py-1 text-xs text-[#E8E3D8] focus:border-[#B8964C] focus:outline-none"
+      >
+        <option value="">All</option>
+        {options.map((opt) => (
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }
