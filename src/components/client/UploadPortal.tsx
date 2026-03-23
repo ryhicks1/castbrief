@@ -10,6 +10,8 @@ interface UploadPortalProps {
   agencyName: string;
   uploadUrl: string | null; // Dropbox File Request URL, or null for manual
   alreadyUploaded: boolean;
+  formUrl?: string | null;
+  formStatus?: string | null;
 }
 
 export default function UploadPortal({
@@ -19,15 +21,22 @@ export default function UploadPortal({
   agencyName,
   uploadUrl,
   alreadyUploaded,
+  formUrl,
+  formStatus,
 }: UploadPortalProps) {
   const [confirmed, setConfirmed] = useState(alreadyUploaded);
   const [confirming, setConfirming] = useState(false);
+  const [formChecked, setFormChecked] = useState(formStatus === "completed");
 
   async function handleConfirm() {
     setConfirming(true);
     try {
       const res = await fetch(`/api/upload/${token}/confirm`, {
         method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          form_completed: formUrl ? formChecked : undefined,
+        }),
       });
       if (res.ok) {
         setConfirmed(true);
@@ -67,6 +76,28 @@ export default function UploadPortal({
             </div>
           ) : (
             <>
+              {formUrl && (
+                <div className="mb-5">
+                  <a
+                    href={formUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center w-full rounded-lg bg-gradient-to-r from-[#C9A84C] to-[#B8943F] px-6 py-3 text-sm font-semibold text-[#0F0F12] hover:from-[#D4B35C] hover:to-[#C9A84C] hover:shadow-lg hover:shadow-[#B8964C]/10 transition-all duration-300 mb-3"
+                  >
+                    Complete Required Form &rarr;
+                  </a>
+                  <label className="flex items-center gap-2 cursor-pointer text-sm text-[#E8E3D8]">
+                    <input
+                      type="checkbox"
+                      checked={formChecked}
+                      onChange={(e) => setFormChecked(e.target.checked)}
+                      className="rounded border-[#1E2128] bg-[#0F0F12] text-[#C9A84C] focus:ring-[#B8964C]"
+                    />
+                    I have completed the form
+                  </label>
+                </div>
+              )}
+
               {uploadUrl ? (
                 <>
                   <a
@@ -100,6 +131,7 @@ export default function UploadPortal({
                 size="lg"
                 onClick={handleConfirm}
                 loading={confirming}
+                disabled={!!formUrl && !formChecked}
                 className="w-full"
               >
                 {confirming ? "Confirming..." : "I've Finished Uploading"}

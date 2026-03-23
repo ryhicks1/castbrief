@@ -25,6 +25,7 @@ export default function MediaRequestModal({
   onSuccess,
 }: MediaRequestModalProps) {
   const [message, setMessage] = useState("");
+  const [formUrl, setFormUrl] = useState("");
   const [link, setLink] = useState("");
   const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null);
   const [attachmentName, setAttachmentName] = useState<string | null>(null);
@@ -68,6 +69,7 @@ export default function MediaRequestModal({
           token,
           message: message || undefined,
           link: link || undefined,
+          formUrl: formUrl || undefined,
           attachmentUrl: attachmentUrl || undefined,
         }),
       });
@@ -142,6 +144,20 @@ export default function MediaRequestModal({
             placeholder="Describe what you need: self-tape scene, wardrobe notes, deadline..."
             rows={4}
             className="w-full rounded-lg border border-[#2A2D35] bg-[#0D0F14] px-3 py-2 text-sm text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#C9A84C] focus:outline-none resize-none"
+          />
+        </div>
+
+        {/* Form URL */}
+        <div className="mb-3">
+          <label className="block text-xs font-medium text-[#8B8D93] mb-1">
+            External form link (optional)
+          </label>
+          <input
+            type="url"
+            value={formUrl}
+            onChange={(e) => setFormUrl(e.target.value)}
+            placeholder="https://forms.google.com/..."
+            className="w-full rounded-lg border border-[#2A2D35] bg-[#0D0F14] px-3 py-2 text-sm text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#C9A84C] focus:outline-none"
           />
         </div>
 

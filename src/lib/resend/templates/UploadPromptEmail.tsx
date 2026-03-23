@@ -7,6 +7,7 @@ interface UploadPromptEmailProps {
   uploadToken: string;
   message?: string;
   link?: string;
+  formUrl?: string;
 }
 
 export function renderUploadPromptEmail({
@@ -16,6 +17,7 @@ export function renderUploadPromptEmail({
   uploadToken,
   message,
   link,
+  formUrl,
 }: UploadPromptEmailProps): { subject: string; html: string } {
   const url = `${getAppUrl()}/upload/${uploadToken}`;
   const subject = `You've been requested to submit materials for ${packageName}`;
@@ -42,6 +44,12 @@ export function renderUploadPromptEmail({
           ${link ? `<div style="margin:0 0 20px;">
             <p style="color:#8B8D93;font-size:12px;margin:0 0 4px;">Reference:</p>
             <a href="${link}" style="color:#C9A84C;font-size:14px;text-decoration:underline;">${link}</a>
+          </div>` : ""}
+          ${formUrl ? `<div style="margin:0 0 20px;padding:16px;background-color:#0D0F14;border-radius:8px;border:1px solid #1E2128;">
+            <p style="color:#8B8D93;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 8px;font-weight:600;">Form to fill out</p>
+            <a href="${formUrl}" style="display:inline-block;background:linear-gradient(135deg,#C9A84C,#B8943F);color:#0D0F14;text-decoration:none;padding:10px 24px;border-radius:8px;font-weight:600;font-size:14px;">
+              Open Form
+            </a>
           </div>` : ""}
           <a href="${url}" style="display:inline-block;background:linear-gradient(135deg,#C9A84C,#B8943F);color:#0D0F14;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:15px;">
             Upload Your Materials

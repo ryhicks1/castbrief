@@ -5,6 +5,7 @@ interface PackageRequestEmailProps {
   projectName: string;
   roleName: string | null;
   brief: string | null;
+  formUrl?: string;
 }
 
 export function renderPackageRequestEmail({
@@ -12,6 +13,7 @@ export function renderPackageRequestEmail({
   projectName,
   roleName,
   brief,
+  formUrl,
 }: PackageRequestEmailProps) {
   const appUrl = getAppUrl();
   const subject = `Package Request: ${projectName}${roleName ? ` — ${roleName}` : ""}`;
@@ -44,6 +46,12 @@ export function renderPackageRequestEmail({
         <tr>
           <td style="padding: 8px 0; color: #8B8D93; vertical-align: top;">Brief</td>
           <td style="padding: 8px 0; color: #E8E3D8;">${brief}</td>
+        </tr>
+        ` : ""}
+        ${formUrl ? `
+        <tr>
+          <td style="padding: 8px 0; color: #8B8D93; vertical-align: top;">Form to complete</td>
+          <td style="padding: 8px 0;"><a href="${formUrl}" style="color: #C9A84C; text-decoration: underline; font-size: 14px;">${formUrl}</a></td>
         </tr>
         ` : ""}
       </table>

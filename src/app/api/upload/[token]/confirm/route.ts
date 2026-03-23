@@ -4,12 +4,20 @@ import { sendEmail } from "@/lib/resend/client";
 import { renderUploadConfirmationEmail } from "@/lib/resend/templates/UploadConfirmationEmail";
 
 export async function PATCH(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {
     const { token } = await params;
     const supabase = createAdminClient();
+
+    // Parse optional body
+    let body: { form_completed?: boolean } = {};
+    try {
+      body = await request.json();
+    } catch {
+      // No body is fine
+    }
 
     // Find the package_talent by upload_token
     const { data: pt, error: ptError } = await supabase
@@ -22,10 +30,14 @@ export async function PATCH(
       return NextResponse.json({ error: "Upload link not found" }, { status: 404 });
     }
 
-    // Update upload status
+    // Update upload status (and form_status if applicable)
+    const updateData: Record<string, string> = { upload_status: "uploaded" };
+    if (body.form_completed) {
+      updateData.form_status = "completed";
+    }
     await supabase
       .from("package_talents")
-      .update({ upload_status: "uploaded" })
+      .update(updateData)
       .eq("id", pt.id);
 
     // Send confirmation email to agent

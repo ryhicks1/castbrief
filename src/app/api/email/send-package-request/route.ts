@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { agentEmail, projectName, roleName, brief } = body;
+    const { agentEmail, projectName, roleName, brief, formUrl } = body;
 
     if (!agentEmail || !projectName) {
       return NextResponse.json(
@@ -38,6 +38,7 @@ export async function POST(request: Request) {
       projectName,
       roleName: roleName || null,
       brief: brief || null,
+      formUrl: formUrl || undefined,
     });
 
     try {

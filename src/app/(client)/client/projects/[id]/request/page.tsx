@@ -47,6 +47,7 @@ export default function RequestPackagePage() {
   const [selectedListIds, setSelectedListIds] = useState<string[]>([]);
   const [projectDocs, setProjectDocs] = useState<ProjectDocument[]>([]);
   const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
+  const [formUrl, setFormUrl] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -164,6 +165,7 @@ export default function RequestPackagePage() {
       project_id: string;
       role_id: string | null;
       brief: string | null;
+      form_url: string | null;
     }[] = [];
 
     // Collect all agent emails (selected agent IDs + manual emails + list emails), deduplicated
@@ -184,6 +186,7 @@ export default function RequestPackagePage() {
           project_id: projectId,
           role_id: null,
           brief: brief || null,
+          form_url: formUrl || null,
         });
       } else {
         // Cartesian product: one row per agent x role
@@ -194,6 +197,7 @@ export default function RequestPackagePage() {
             project_id: projectId,
             role_id: roleId,
             brief: brief || null,
+            form_url: formUrl || null,
           });
         }
       }
@@ -235,6 +239,7 @@ export default function RequestPackagePage() {
               projectName,
               roleName: roleNames.length > 0 ? roleNames.join(", ") : null,
               brief: brief || null,
+              formUrl: formUrl || null,
             }),
           });
         } catch (e) {
@@ -366,6 +371,19 @@ export default function RequestPackagePage() {
             rows={4}
             placeholder="Describe what kind of talent you're looking for..."
             className="w-full rounded-lg border border-[#1E2128] bg-[#0F0F12] px-3 py-2 text-sm text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#B8964C] focus:outline-none focus:ring-1 focus:ring-[#B8964C] transition-all duration-300 resize-none"
+          />
+        </div>
+
+        {/* Form Link */}
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-[#E8E3D8]">
+            Form Link (JotForm, Google Forms, etc.)
+          </label>
+          <Input
+            type="url"
+            value={formUrl}
+            onChange={(e) => setFormUrl(e.target.value)}
+            placeholder="https://forms.google.com/..."
           />
         </div>
 

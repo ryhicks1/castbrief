@@ -48,6 +48,7 @@ interface PackageReviewProps {
     isHiddenByClient: boolean;
     mediaRequested: boolean;
     uploadStatus: string;
+    formStatus: string | null;
     agentNote: string | null;
     groupLabel: string | null;
     full_name: string;
@@ -742,22 +743,37 @@ function TalentReviewCard({
 
         {/* Upload status + actions row */}
         <div className="flex items-center justify-between pt-2 border-t border-[#1E2128]">
-          <Badge
-            label={
-              talent.uploadStatus === "uploaded"
-                ? "Uploaded"
-                : talent.uploadStatus === "pending"
-                ? "Pending"
-                : "N/A"
-            }
-            color={
-              talent.uploadStatus === "uploaded"
-                ? "green"
-                : talent.uploadStatus === "pending"
-                ? "gold"
-                : "muted"
-            }
-          />
+          <div className="flex items-center gap-1.5">
+            <Badge
+              label={
+                talent.uploadStatus === "uploaded"
+                  ? "Uploaded"
+                  : talent.uploadStatus === "pending"
+                  ? "Pending"
+                  : "N/A"
+              }
+              color={
+                talent.uploadStatus === "uploaded"
+                  ? "green"
+                  : talent.uploadStatus === "pending"
+                  ? "gold"
+                  : "muted"
+              }
+            />
+            {talent.formStatus && talent.formStatus !== "none" && (
+              <span
+                className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                  talent.formStatus === "completed"
+                    ? "bg-emerald-500/20 text-emerald-400"
+                    : "bg-orange-500/20 text-orange-400"
+                }`}
+              >
+                {talent.formStatus === "completed"
+                  ? "Form Done \u2713"
+                  : "Form Sent"}
+              </span>
+            )}
+          </div>
 
           <div className="flex items-center gap-1">
             <button

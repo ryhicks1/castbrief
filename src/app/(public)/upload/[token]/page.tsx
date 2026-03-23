@@ -14,7 +14,7 @@ export default async function UploadPage({
   const { data: pt, error } = await supabase
     .from("package_talents")
     .select(
-      "id, upload_token, upload_url, upload_status, talents(full_name), packages(name, agent_id, profiles:agent_id(full_name, agency_name))"
+      "id, upload_token, upload_url, upload_status, form_url, form_status, talents(full_name), packages(name, agent_id, profiles:agent_id(full_name, agency_name))"
     )
     .eq("upload_token", token)
     .single();
@@ -57,6 +57,8 @@ export default async function UploadPage({
         agencyName={agencyName}
         uploadUrl={isDropboxUrl ? uploadUrl : null}
         alreadyUploaded={pt.upload_status === "uploaded"}
+        formUrl={(pt as any).form_url || null}
+        formStatus={(pt as any).form_status || null}
       />
     </div>
   );

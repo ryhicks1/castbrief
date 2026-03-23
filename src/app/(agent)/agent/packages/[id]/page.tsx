@@ -27,7 +27,7 @@ export default async function PackageReviewPage({
          id, talent_id, sort_order, client_pick, client_comment,
          client_status, client_rating,
          is_hidden_by_client, media_requested, upload_status,
-         upload_token, agent_note, group_label,
+         upload_token, agent_note, group_label, form_url, form_status,
          talents(
            id, full_name, age, location, cultural_background,
            height_cm, weight_kg, photo_url, links,
@@ -58,6 +58,8 @@ export default async function PackageReviewPage({
         upload_token: string | null;
         agent_note: string | null;
         group_label: string | null;
+        form_url: string | null;
+        form_status: string | null;
         talents:
           | {
               id: string;
@@ -108,6 +110,7 @@ export default async function PackageReviewPage({
           isHiddenByClient: pt.is_hidden_by_client,
           mediaRequested: pt.media_requested,
           uploadStatus: pt.upload_status,
+          formStatus: pt.form_status,
           agentNote: pt.agent_note,
           groupLabel: pt.group_label,
           full_name: talent.full_name,

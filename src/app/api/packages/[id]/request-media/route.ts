@@ -17,7 +17,7 @@ export async function POST(
   try {
     const { id: packageId } = await params;
     const body = await request.json();
-    const { token, clientName, message, link, attachmentUrl } = body;
+    const { token, clientName, message, link, formUrl, attachmentUrl } = body;
 
     if (!token) {
       return NextResponse.json({ error: "Token required" }, { status: 401 });
@@ -88,6 +88,7 @@ export async function POST(
           upload_status: "pending",
           upload_token: uploadToken,
           upload_url: uploadUrl,
+          ...(formUrl ? { form_url: formUrl, form_status: "sent" } : {}),
         })
         .eq("id", pt.id);
 
@@ -143,6 +144,7 @@ export async function POST(
         media_request_message: message || null,
         media_request_link: link || null,
         media_request_attachment_url: attachmentUrl || null,
+        ...(formUrl ? { form_url: formUrl } : {}),
       })
       .eq("id", packageId);
 
