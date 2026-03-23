@@ -454,7 +454,7 @@ export default function PackageBuilder({
         <div className="flex-1 overflow-y-auto pr-1">
           <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
             {filtered.map((talent) => (
-              <label
+              <div
                 key={talent.id}
                 onClick={() => toggleSelect(talent.id)}
                 className={`group relative rounded-xl overflow-hidden cursor-pointer shadow-lg shadow-black/20 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/30 transition-all duration-300 ${
@@ -497,7 +497,7 @@ export default function PackageBuilder({
                     </p>
                   </div>
                 </div>
-              </label>
+              </div>
             ))}
           </div>
         </div>
