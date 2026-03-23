@@ -1,62 +1,113 @@
 import Link from "next/link";
 
+const audienceCards = [
+  {
+    emoji: "🎭",
+    title: "For Agents",
+    description:
+      "Build and manage your roster. Send curated talent packages to clients with one link. Track client feedback in real time.",
+    cta: "Agent Sign Up",
+  },
+  {
+    emoji: "🎬",
+    title: "For Casting Directors",
+    description:
+      "Create projects with roles. Request talent from agents. Review with yes/no/maybe, ratings, and comments. Run open calls for self-submissions.",
+    cta: "Client Sign Up",
+  },
+  {
+    emoji: "⭐",
+    title: "For Talent",
+    description:
+      "Get discovered and submit directly. Upload self-tapes, fill out forms, download sides — all from one portal. Build your public profile.",
+    cta: "Actor Sign Up",
+  },
+];
+
 const steps = [
   {
     number: "01",
-    title: "Build",
+    title: "Create",
     description:
-      "Quickly set up your roster with headshots, reels, measurements, links to all their profiles. Organize your roster by skill, filters or by project.",
+      "Agents build talent packages. Clients create projects with roles and open calls.",
   },
   {
     number: "02",
-    title: "Send",
+    title: "Share",
     description:
-      "Create curated packages and share a single link with clients. No logins, no downloads, no friction.",
+      "Send one link — no PDFs, no logins needed for clients. Talent get upload portals via email.",
   },
   {
     number: "03",
     title: "Review",
     description:
-      "Clients browse your selections, leave comments, flag favorites, and hide talent that aren't right for the role.",
+      "Clients review talent with yes/no/maybe, star ratings, comments, and side-by-side comparisons.",
   },
   {
     number: "04",
-    title: "Collect",
+    title: "Submit",
     description:
-      "The client makes selects and requests self-tapes. The talent will receive a simple upload link. You get notified when files land.",
+      "Talent upload self-tapes to Dropbox or direct. Fill out forms. Download watermarked sides.",
+  },
+  {
+    number: "05",
+    title: "Decide",
+    description:
+      "Filter by agency, location, age, skills. Export PDF/CSV reports. Share projects with collaborators.",
+  },
+  {
+    number: "06",
+    title: "Cast",
+    description:
+      "Close roles, notify all agents and talent, and archive the project. Done.",
   },
 ];
 
 const features = [
   {
-    title: "Shareable Package Links",
+    title: "Talent Packages",
     description:
-      "Send one link instead of bulky PDFs. Clients open it instantly — no account required.",
+      "Curated selections with one shareable link. Clients review instantly — no account required.",
   },
   {
-    title: "Client Selections & Feedback",
+    title: "AI Script Breakdown",
     description:
-      "Casting directors pick favorites, hide passes, and leave notes — all in one place you can see in real time.",
+      "Upload a PDF script and AI extracts every speaking role with casting descriptions and sides.",
   },
   {
-    title: "Self-Tape Requests",
+    title: "Open Calls",
     description:
-      "Trigger upload requests to talent with a click. They submit via Dropbox, you track completion automatically.",
+      "Post a link on social media. Talent self-submit with headshots, reels, and forms directly.",
   },
   {
-    title: "Talent Roster Management",
+    title: "Self-Tape Collection",
     description:
-      "Maintain a living roster with headshots, reels, credits, and notes. Pull talent into packages in seconds.",
+      "Talent upload via Dropbox or direct. Auto-organized into project folders. Zero storage cost.",
   },
   {
-    title: "Real-Time Notifications",
+    title: "Reports & Export",
     description:
-      "Know the moment a client opens your package, makes selections, or when talent complete their self-tape uploads.",
+      "PDF talent reports with photos. CSV data export. Everything you need for stakeholder reviews.",
   },
   {
-    title: "No More Email Chains",
+    title: "Project Collaboration",
     description:
-      "Stop digging through inboxes for feedback. Every comment, pick, and pass lives on the package itself.",
+      "Share projects with other producers and casting directors. Real-time synced selections.",
+  },
+  {
+    title: "Dropbox Integration",
+    description:
+      "Auto folder structure mirrors your projects. Self-tapes go straight to your Dropbox. Zero storage costs.",
+  },
+  {
+    title: "External Forms",
+    description:
+      "Attach JotForm or Google Forms to requests. Track completion per talent automatically.",
+  },
+  {
+    title: "Watermarked Sides",
+    description:
+      "Sides auto-watermarked with talent email to prevent leaks. Downloaded securely from the portal.",
   },
 ];
 
@@ -65,7 +116,10 @@ export default function Home() {
     <main className="min-h-screen bg-[#0F0F12] text-[#E8E3D8]">
       {/* ─── Nav ─── */}
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-        <Link href="/" className="text-xl font-bold tracking-tight text-[#B8964C]">
+        <Link
+          href="/"
+          className="text-xl font-bold tracking-tight text-[#B8964C]"
+        >
           CastingBrief
         </Link>
         <div className="flex items-center gap-4">
@@ -85,43 +139,69 @@ export default function Home() {
       </nav>
 
       {/* ─── Hero ─── */}
-      <section className="mx-auto max-w-4xl px-6 pt-28 pb-36 text-center">
+      <section className="mx-auto max-w-4xl px-6 pt-24 pb-28 text-center">
         <h1 className="font-[family-name:var(--font-display)] text-4xl sm:text-5xl md:text-6xl tracking-tight leading-tight">
-          <span className="text-[#B8964C]">CastingBrief</span>
+          <span className="text-[#B8964C]">The modern</span>
           <br />
-          <span className="text-[#E8E3D8]">
-            Talent packaging, done right
-          </span>
+          <span className="text-[#E8E3D8]">casting platform</span>
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-lg text-[#8B8D93] leading-relaxed">
-          Quickly build curated talent packages to send direct to clients. Share
-          them with a single link, let clients pick favorites, request self-tapes
-          directly from the package, hide talent, give feedback and make a
-          decision.
+          Connecting agents, casting directors, and talent — seamlessly. From
+          talent packaging to open calls, self-tape submissions to casting
+          decisions — all in one place.
         </p>
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
             href="/signup"
             className="w-full sm:w-auto rounded-lg bg-[#B8964C] px-8 py-3.5 text-sm font-semibold text-[#0F0F12] hover:bg-[#C9A64C] transition-all duration-300 active:scale-[0.98]"
           >
-            Create My First Package
+            Get Started Free
           </Link>
           <Link
-            href="/login"
+            href="#how-it-works"
             className="w-full sm:w-auto rounded-lg border border-[#2A2D35] bg-[#13151A] px-8 py-3.5 text-sm font-medium text-[#E8E3D8] hover:bg-[#1E2128] transition-colors"
           >
-            I received a package
+            See How It Works
           </Link>
         </div>
       </section>
 
-      {/* ─── How It Works ─── */}
+      {/* ─── Audience Cards ─── */}
       <section className="border-t border-[#1E2128]">
-        <div className="mx-auto max-w-5xl px-6 py-28">
+        <div className="mx-auto max-w-5xl px-6 py-24">
+          <h2 className="font-[family-name:var(--font-display)] text-center text-2xl sm:text-3xl tracking-tight mb-14">
+            Built for everyone in casting
+          </h2>
+          <div className="grid gap-6 sm:grid-cols-3">
+            {audienceCards.map((card) => (
+              <div
+                key={card.title}
+                className="rounded-xl border border-[#1E2128] bg-[#13151A] p-6 hover:border-[#2A2D35] transition-colors group"
+              >
+                <span className="text-3xl">{card.emoji}</span>
+                <h3 className="mt-4 text-lg font-semibold">{card.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-[#8B8D93]">
+                  {card.description}
+                </p>
+                <Link
+                  href="/signup"
+                  className="mt-5 inline-block rounded-lg bg-[#B8964C] px-5 py-2 text-xs font-semibold text-[#0F0F12] hover:bg-[#C9A64C] transition-colors"
+                >
+                  {card.cta}
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── How It Works ─── */}
+      <section id="how-it-works" className="border-t border-[#1E2128]">
+        <div className="mx-auto max-w-5xl px-6 py-24">
           <h2 className="font-[family-name:var(--font-display)] text-center text-2xl sm:text-3xl tracking-tight">
             How it works
           </h2>
-          <div className="mt-14 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-14 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {steps.map((step) => (
               <div key={step.number}>
                 <span className="text-xs font-mono text-[#B8964C]">
@@ -139,15 +219,15 @@ export default function Home() {
 
       {/* ─── Features ─── */}
       <section className="border-t border-[#1E2128] bg-[#0F0F12]">
-        <div className="mx-auto max-w-5xl px-6 py-28">
+        <div className="mx-auto max-w-5xl px-6 py-24">
           <h2 className="font-[family-name:var(--font-display)] text-center text-2xl sm:text-3xl tracking-tight">
-            Everything you need to manage submissions
+            Platform features
           </h2>
-          <div className="mt-14 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((feature) => (
               <div
                 key={feature.title}
-                className="rounded-xl bg-[#13151A] p-6"
+                className="rounded-xl bg-[#13151A] p-6 border border-transparent hover:border-[#1E2128] transition-colors"
               >
                 <h3 className="text-sm font-semibold">{feature.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-[#8B8D93]">
@@ -159,42 +239,49 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─── CTA: Agents ─── */}
+      {/* ─── CTA ─── */}
       <section className="border-t border-[#1E2128]">
-        <div className="mx-auto max-w-3xl px-6 py-28 text-center">
+        <div className="mx-auto max-w-4xl px-6 py-24 text-center">
           <h2 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl tracking-tight">
-            Ready to modernize your workflow?
+            Ready to streamline your casting?
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-[#8B8D93] leading-relaxed">
-            Set up your roster, build your first package, and send it to a
-            client in minutes. Free to start — no credit card required.
+            Free to start. No credit card required.
           </p>
-          <Link
-            href="/signup"
-            className="mt-8 inline-block rounded-lg bg-[#B8964C] px-10 py-3.5 text-sm font-semibold text-[#0F0F12] hover:bg-[#C9A64C] transition-all duration-300 active:scale-[0.98]"
-          >
-            Create Your Agent Account
-          </Link>
-        </div>
-      </section>
-
-      {/* ─── CTA: Clients ─── */}
-      <section className="border-t border-[#1E2128] bg-[#13151A]">
-        <div className="mx-auto max-w-3xl px-6 py-20 text-center">
-          <h2 className="font-[family-name:var(--font-display)] text-xl sm:text-2xl tracking-tight">
-            Are you a casting director or client?
-          </h2>
-          <p className="mx-auto mt-3 max-w-lg text-sm text-[#8B8D93] leading-relaxed">
-            If you received a package link from an agent, you can open it
-            directly — no account needed. If you want to sign in and manage your
-            selections, or create new projects, use the link below.
-          </p>
-          <Link
-            href="/login"
-            className="mt-6 inline-block rounded-lg border border-[#2A2D35] bg-[#0F0F12] px-8 py-3 text-sm font-medium text-[#E8E3D8] hover:bg-[#1E2128] transition-colors"
-          >
-            Sign In to Your Account
-          </Link>
+          <div className="mt-10 grid gap-4 sm:grid-cols-3 max-w-2xl mx-auto">
+            <Link
+              href="/signup"
+              className="rounded-xl border border-[#1E2128] bg-[#13151A] p-5 text-center hover:border-[#B8964C]/30 transition group"
+            >
+              <p className="text-xs text-[#8B8D93] mb-1">I&apos;m an</p>
+              <p className="text-lg font-semibold text-[#E8E3D8]">Agent</p>
+              <p className="mt-2 text-xs text-[#B8964C] group-hover:underline">
+                Sign Up →
+              </p>
+            </Link>
+            <Link
+              href="/signup"
+              className="rounded-xl border border-[#1E2128] bg-[#13151A] p-5 text-center hover:border-[#B8964C]/30 transition group"
+            >
+              <p className="text-xs text-[#8B8D93] mb-1">I&apos;m a</p>
+              <p className="text-lg font-semibold text-[#E8E3D8]">
+                Casting Director
+              </p>
+              <p className="mt-2 text-xs text-[#B8964C] group-hover:underline">
+                Sign Up →
+              </p>
+            </Link>
+            <Link
+              href="/signup"
+              className="rounded-xl border border-[#1E2128] bg-[#13151A] p-5 text-center hover:border-[#B8964C]/30 transition group"
+            >
+              <p className="text-xs text-[#8B8D93] mb-1">I&apos;m an</p>
+              <p className="text-lg font-semibold text-[#E8E3D8]">Actor</p>
+              <p className="mt-2 text-xs text-[#B8964C] group-hover:underline">
+                Sign Up →
+              </p>
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -205,10 +292,16 @@ export default function Home() {
             CastingBrief
           </Link>
           <div className="flex gap-6 text-xs text-[#8B8D93]">
-            <Link href="/privacy" className="hover:text-[#E8E3D8] transition-colors">
+            <Link
+              href="/privacy"
+              className="hover:text-[#E8E3D8] transition-colors"
+            >
               Privacy
             </Link>
-            <Link href="/terms" className="hover:text-[#E8E3D8] transition-colors">
+            <Link
+              href="/terms"
+              className="hover:text-[#E8E3D8] transition-colors"
+            >
               Terms
             </Link>
             <a
