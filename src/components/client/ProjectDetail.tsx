@@ -872,6 +872,28 @@ function RoleCard({
     onRefresh?.();
   }
 
+  const [showCloseRole, setShowCloseRole] = useState(false);
+  const [closeRoleMsg, setCloseRoleMsg] = useState("");
+  const [closingRole, setClosingRole] = useState(false);
+
+  async function handleCloseRole() {
+    setClosingRole(true);
+    try {
+      await fetch(`/api/roles/${role.id}/close`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: closeRoleMsg.trim() }),
+      });
+      setShowCloseRole(false);
+      setCloseRoleMsg("");
+      onRefresh?.();
+    } catch (err) {
+      console.error("Failed to close role:", err);
+    } finally {
+      setClosingRole(false);
+    }
+  }
+
   async function handleToggleOpenCallVisible() {
     await fetch(`/api/roles/${role.id}`, {
       method: "PATCH",
@@ -913,6 +935,7 @@ function RoleCard({
           },
         ]
       : []),
+    { label: "Close Role & Release Talent", icon: <XCircle size={14} />, onClick: () => setShowCloseRole(true) },
     { label: "Delete", icon: <Trash2 size={14} />, onClick: handleDelete, danger: true },
   ];
 
@@ -1137,6 +1160,36 @@ function RoleCard({
           </button>
         )}
       </div>
+
+      {/* Close Role Modal */}
+      {showCloseRole && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setShowCloseRole(false)} />
+          <div className="relative w-full max-w-md rounded-xl border border-[#1E2128] bg-[#13151A] p-6 shadow-2xl mx-4">
+            <h2 className="text-lg font-bold text-[#E8E3D8] mb-1">Close Role & Release Talent</h2>
+            <p className="text-xs text-[#8B8D93] mb-4">
+              Notify all agents and talent submitted for <span className="text-[#E8E3D8] font-medium">{role.name}</span> that this role has been cast.
+            </p>
+            <textarea
+              value={closeRoleMsg}
+              onChange={(e) => setCloseRoleMsg(e.target.value)}
+              placeholder="Thank you for your submissions. This role has now been cast..."
+              rows={4}
+              className="w-full rounded-lg border border-[#2A2D35] bg-[#0D0F14] px-3 py-2 text-sm text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#C9A84C] focus:outline-none resize-none mb-4"
+            />
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setShowCloseRole(false)} className="rounded-lg bg-[#1E2128] px-4 py-2 text-sm text-[#8B8D93] hover:text-[#E8E3D8] transition">Cancel</button>
+              <button
+                onClick={handleCloseRole}
+                disabled={closingRole}
+                className="rounded-lg bg-gradient-to-r from-[#C9A84C] to-[#B8943F] px-4 py-2 text-sm font-semibold text-[#0D0F14] hover:from-[#D4B35C] hover:to-[#C9A84C] transition disabled:opacity-50"
+              >
+                {closingRole ? "Sending..." : "Close Role & Notify"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
