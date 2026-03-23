@@ -16,16 +16,34 @@ export default async function ProjectPage({
   const { data: project, error } = await supabase
     .from("projects")
     .select(`
-      id, name, brand, type, status, deadline,
-      roles(id, name, brief)
+      id, name, brand, type, status, deadline, client_id,
+      roles(id, name, brief, folder_id)
     `)
     .eq("id", id)
-    .eq("client_id", user.id)
     .single();
 
 
 
   if (!project) redirect("/client/projects");
+
+  // Check access: owner or collaborator
+  const isOwner = project.client_id === user.id;
+  if (!isOwner) {
+    const { data: collab } = await supabase
+      .from("project_collaborators")
+      .select("role")
+      .eq("project_id", id)
+      .eq("user_id", user.id)
+      .single();
+    if (!collab) redirect("/client/projects");
+  }
+
+  // Fetch project folders
+  const { data: folders } = await supabase
+    .from("project_folders")
+    .select("id, name, sort_order")
+    .eq("project_id", id)
+    .order("sort_order", { ascending: true });
 
   // Fetch package requests for this project
   const { data: requests } = await supabase
@@ -102,6 +120,8 @@ export default async function ProjectPage({
       userId={user.id}
       requests={requests || []}
       documents={documents || []}
+      folders={folders || []}
+      isOwner={isOwner}
     />
   );
 }

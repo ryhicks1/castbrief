@@ -13,12 +13,17 @@ import {
   CheckCircle,
   AlertTriangle,
   ChevronRight,
+  ChevronDown,
   Image as ImageIcon,
   Calendar,
   FileDown,
+  FolderPlus,
+  Folder,
+  Trash2,
 } from "lucide-react";
 import DocumentSection from "./DocumentSection";
 import ScriptBreakdownModal from "./ScriptBreakdownModal";
+import ShareProjectModal from "./ShareProjectModal";
 import { FileText } from "lucide-react";
 
 function agencyColor(agentId: string): string {
@@ -55,9 +60,17 @@ interface DocumentRecord {
   created_by: string;
 }
 
+interface FolderRecord {
+  id: string;
+  name: string;
+  sort_order: number;
+}
+
 interface ProjectDetailProps {
   documents?: DocumentRecord[];
   requests?: PackageRequest[];
+  folders?: FolderRecord[];
+  isOwner?: boolean;
   project: {
     id: string;
     name: string;
@@ -69,6 +82,7 @@ interface ProjectDetailProps {
       id: string;
       name: string;
       brief: string | null;
+      folder_id?: string | null;
       role_packages: {
         id: string;
         package_id: string;
@@ -93,12 +107,25 @@ interface ProjectDetailProps {
   userId: string;
 }
 
-export default function ProjectDetail({ project, userId, requests = [], documents = [] }: ProjectDetailProps) {
+export default function ProjectDetail({
+  project,
+  userId,
+  requests = [],
+  documents = [],
+  folders = [],
+  isOwner = true,
+}: ProjectDetailProps) {
   const router = useRouter();
   const [roleName, setRoleName] = useState("");
   const [roleBrief, setRoleBrief] = useState("");
+  const [roleFolderId, setRoleFolderId] = useState<string>("");
   const [addingRole, setAddingRole] = useState(false);
   const [showScriptModal, setShowScriptModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [addingFolder, setAddingFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [showFolderInput, setShowFolderInput] = useState(false);
+  const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
 
   const statusColors: Record<string, string> = {
     active: "text-green-400 bg-green-400/10",
@@ -129,6 +156,25 @@ export default function ProjectDetail({ project, userId, requests = [], document
       })()
     : null;
 
+  // Group roles by folder
+  const ungroupedRoles = (project.roles || []).filter((r) => !r.folder_id);
+  const folderRolesMap: Record<string, typeof project.roles> = {};
+  for (const folder of folders) {
+    folderRolesMap[folder.id] = (project.roles || []).filter((r) => r.folder_id === folder.id);
+  }
+
+  function toggleFolderCollapse(folderId: string) {
+    setCollapsedFolders((prev) => {
+      const next = new Set(prev);
+      if (next.has(folderId)) {
+        next.delete(folderId);
+      } else {
+        next.add(folderId);
+      }
+      return next;
+    });
+  }
+
   async function handleAddRole(e: React.FormEvent) {
     e.preventDefault();
     if (!roleName.trim()) return;
@@ -139,12 +185,47 @@ export default function ProjectDetail({ project, userId, requests = [], document
       project_id: project.id,
       name: roleName.trim(),
       brief: roleBrief.trim() || null,
+      folder_id: roleFolderId || null,
     });
 
     setRoleName("");
     setRoleBrief("");
+    setRoleFolderId("");
     setAddingRole(false);
     router.refresh();
+  }
+
+  async function handleAddFolder(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newFolderName.trim()) return;
+    setAddingFolder(true);
+
+    try {
+      await fetch("/api/project-folders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          project_id: project.id,
+          name: newFolderName.trim(),
+        }),
+      });
+      setNewFolderName("");
+      setShowFolderInput(false);
+      router.refresh();
+    } catch (err) {
+      console.error("Failed to create folder:", err);
+    } finally {
+      setAddingFolder(false);
+    }
+  }
+
+  async function handleDeleteFolder(folderId: string) {
+    try {
+      await fetch(`/api/project-folders?id=${folderId}`, { method: "DELETE" });
+      router.refresh();
+    } catch (err) {
+      console.error("Failed to delete folder:", err);
+    }
   }
 
   return (
@@ -169,6 +250,15 @@ export default function ProjectDetail({ project, userId, requests = [], document
           >
             {project.status}
           </span>
+          {isOwner && (
+            <button
+              onClick={() => setShowShareModal(true)}
+              className="flex items-center gap-1.5 rounded-lg border border-[#1E2128] bg-[#161920] px-3 py-1 text-xs text-[#8B8D93] hover:text-[#E8E3D8] hover:border-[#2A2D35] transition"
+            >
+              <Users size={13} />
+              Share
+            </button>
+          )}
         </div>
         {project.brand && (
           <p className="text-sm text-[#8B8D93]">
@@ -209,7 +299,7 @@ export default function ProjectDetail({ project, userId, requests = [], document
         <DocumentSection projectId={project.id} documents={documents} />
       </div>
 
-      {/* Add role form */}
+      {/* Roles section header */}
       <div className="mb-6">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-[#8B8D93] mb-3">
           Roles
@@ -223,7 +313,49 @@ export default function ProjectDetail({ project, userId, requests = [], document
             <FileText size={14} />
             Upload Script
           </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowFolderInput(true)}
+          >
+            <FolderPlus size={14} />
+            Add Folder
+          </Button>
         </div>
+
+        {/* Add folder inline input */}
+        {showFolderInput && (
+          <form onSubmit={handleAddFolder} className="flex gap-2 mb-4">
+            <Input
+              type="text"
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              placeholder="Folder name..."
+              className="flex-1"
+              autoFocus
+            />
+            <Button
+              variant="secondary"
+              type="submit"
+              disabled={addingFolder || !newFolderName.trim()}
+              loading={addingFolder}
+            >
+              Create
+            </Button>
+            <Button
+              variant="secondary"
+              type="button"
+              onClick={() => {
+                setShowFolderInput(false);
+                setNewFolderName("");
+              }}
+            >
+              Cancel
+            </Button>
+          </form>
+        )}
+
+        {/* Add role form */}
         <form onSubmit={handleAddRole} className="flex gap-2 mb-4">
           <Input
             type="text"
@@ -239,6 +371,20 @@ export default function ProjectDetail({ project, userId, requests = [], document
             placeholder="Brief description..."
             className="flex-1"
           />
+          {folders.length > 0 && (
+            <select
+              value={roleFolderId}
+              onChange={(e) => setRoleFolderId(e.target.value)}
+              className="rounded-lg border border-[#1E2128] bg-[#161920] px-3 py-2 text-sm text-[#E8E3D8] focus:border-[#C9A84C] focus:outline-none"
+            >
+              <option value="">No Folder</option>
+              {folders.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.name}
+                </option>
+              ))}
+            </select>
+          )}
           <Button
             variant="secondary"
             type="submit"
@@ -250,171 +396,60 @@ export default function ProjectDetail({ project, userId, requests = [], document
         </form>
       </div>
 
-      {/* Roles list */}
+      {/* Roles list - grouped by folders */}
       <div className="space-y-3">
-        {(project.roles || []).map((role) => {
-          const allRoleTalents = role.role_packages?.flatMap(
-            (rp) => rp.packages?.package_talents || []
-          ) || [];
-          const talentCount = allRoleTalents.length;
-          const pickCount = allRoleTalents.filter((t) => t.client_pick).length;
-          const mediaRequested = allRoleTalents.filter((t: any) => t.media_requested).length;
-          const mediaUploaded = allRoleTalents.filter((t: any) => t.upload_status === "uploaded").length;
-          const agentIds = [
-            ...new Set(
-              role.role_packages
-                ?.map((rp) => rp.packages?.agent_id)
-                .filter(Boolean) || []
-            ),
-          ];
-          const progress = talentCount > 0 ? (pickCount / talentCount) * 100 : 0;
-          const roleRequests = requests.filter((r) => r.role_id === role.id);
-          const rolePending = roleRequests.filter((r) => r.status !== "responded").length;
+        {/* Ungrouped roles (no folder) */}
+        {ungroupedRoles.map((role) => (
+          <RoleCard key={role.id} role={role} project={project} requests={requests} />
+        ))}
+
+        {/* Folder sections */}
+        {folders.map((folder) => {
+          const folderRoles = folderRolesMap[folder.id] || [];
+          const isCollapsed = collapsedFolders.has(folder.id);
 
           return (
-            <div
-              key={role.id}
-              className="rounded-xl border border-[#1E2128] bg-[#161920] p-4"
-            >
-              <div className="flex items-start justify-between mb-2">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-[#E8E3D8]">{role.name}</h3>
-                    {rolePending > 0 && (
-                      <span className="flex items-center gap-1 text-[10px] text-amber-400">
-                        <Clock size={10} />
-                        {rolePending} pending
-                      </span>
-                    )}
-                  </div>
-                  {role.brief && (
-                    <p className="text-xs text-[#8B8D93] mt-0.5">
-                      {role.brief}
+            <div key={folder.id}>
+              {/* Folder header */}
+              <div className="flex items-center gap-2 mb-2 mt-4">
+                <button
+                  onClick={() => toggleFolderCollapse(folder.id)}
+                  className="flex items-center gap-2 text-sm font-medium text-[#E8E3D8] hover:text-[#C9A84C] transition"
+                >
+                  {isCollapsed ? (
+                    <ChevronRight size={14} className="text-[#8B8D93]" />
+                  ) : (
+                    <ChevronDown size={14} className="text-[#8B8D93]" />
+                  )}
+                  <Folder size={14} className="text-[#C9A84C]" />
+                  {folder.name}
+                  <span className="text-xs text-[#8B8D93] font-normal">
+                    ({folderRoles.length})
+                  </span>
+                </button>
+                <button
+                  onClick={() => handleDeleteFolder(folder.id)}
+                  className="text-[#8B8D93] hover:text-red-400 transition ml-auto"
+                  title="Delete folder"
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
+
+              {/* Folder roles */}
+              {!isCollapsed && (
+                <div className="space-y-3 ml-6">
+                  {folderRoles.length === 0 ? (
+                    <p className="text-xs text-[#8B8D93] italic py-2">
+                      No roles in this folder
                     </p>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  {talentCount > 0 && (
-                    <a
-                      href={`/api/reports/role/${role.id}?format=pdf&projectId=${project.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-xs text-[#8B8D93] hover:text-[#E8E3D8] transition"
-                      title="Export PDF"
-                    >
-                      <FileDown size={12} />
-                    </a>
-                  )}
-                  <Link
-                    href={`/client/projects/${project.id}/roles/${role.id}`}
-                    className="flex items-center gap-1 text-xs text-[#C9A84C] hover:underline"
-                  >
-                    Review Talent
-                    <ChevronRight size={12} />
-                  </Link>
-                </div>
-              </div>
-
-              {/* Progress bar */}
-              {talentCount > 0 && (
-                <div className="mb-3">
-                  <div className="flex items-center justify-between text-[10px] text-[#8B8D93] mb-1">
-                    <span>Selection progress</span>
-                    <span>{pickCount} of {talentCount} selected</span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-[#1E2128] overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-[#C9A84C] to-[#B8943F] transition-all duration-500"
-                      style={{ width: `${Math.min(progress, 100)}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Agency chips */}
-              {agentIds.length > 0 && (
-                <div className="flex gap-1 mb-2">
-                  {agentIds.map((aid) => {
-                    const pkg = role.role_packages?.find(
-                      (rp) => rp.packages?.agent_id === aid
-                    )?.packages;
-                    const label =
-                      pkg?.profiles?.agency_name ||
-                      pkg?.profiles?.full_name ||
-                      "Agency";
-                    const agentTalentCount = role.role_packages
-                      ?.filter((rp) => rp.packages?.agent_id === aid)
-                      .reduce((s, rp) => s + (rp.packages?.package_talents?.length || 0), 0) || 0;
-                    return (
-                      <span
-                        key={aid}
-                        className="rounded-full px-2 py-0.5 text-[10px] font-medium"
-                        style={{
-                          backgroundColor: `${agencyColor(aid)}20`,
-                          color: agencyColor(aid),
-                        }}
-                      >
-                        {label} ({agentTalentCount})
-                      </span>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Talent strip */}
-              {allRoleTalents.length > 0 && (
-                <div className="flex gap-1 overflow-x-auto pb-1 mb-2">
-                  {allRoleTalents.slice(0, 12).map((pt) => {
-                    const pkg = role.role_packages?.find((rp) =>
-                      rp.packages?.package_talents?.some(
-                        (t) => t.id === pt.id
-                      )
-                    )?.packages;
-                    const color = pkg?.agent_id
-                      ? agencyColor(pkg.agent_id)
-                      : "#8B8D93";
-                    const initials = pt.talents?.full_name
-                      ?.split(" ")
-                      .map((n: string) => n[0])
-                      .join("")
-                      .toUpperCase()
-                      .slice(0, 2) || "?";
-
-                    return (
-                      <div
-                        key={pt.id}
-                        className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-semibold border-2 ${
-                          pt.client_pick
-                            ? "border-[#C9A84C]"
-                            : "border-transparent"
-                        }`}
-                        style={{ backgroundColor: `${color}30`, color }}
-                        title={pt.talents?.full_name}
-                      >
-                        {initials}
-                      </div>
-                    );
-                  })}
-                  {allRoleTalents.length > 12 && (
-                    <span className="text-xs text-[#8B8D93] self-center ml-1">
-                      +{allRoleTalents.length - 12}
-                    </span>
+                  ) : (
+                    folderRoles.map((role) => (
+                      <RoleCard key={role.id} role={role} project={project} requests={requests} />
+                    ))
                   )}
                 </div>
               )}
-
-              <div className="flex items-center gap-4 text-xs text-[#8B8D93]">
-                <span>{talentCount} talent</span>
-                <span className="text-[#C9A84C]">{pickCount} pick{pickCount !== 1 ? "s" : ""}</span>
-                {mediaRequested > 0 && (
-                  <span>{mediaUploaded}/{mediaRequested} media uploaded</span>
-                )}
-                {pickCount > 0 && mediaRequested === 0 && (
-                  <button className="text-[#C9A84C] hover:underline">
-                    Request Media ({pickCount})
-                  </button>
-                )}
-              </div>
             </div>
           );
         })}
@@ -511,6 +546,186 @@ export default function ProjectDetail({ project, userId, requests = [], document
           }}
         />
       )}
+
+      {showShareModal && (
+        <ShareProjectModal
+          projectId={project.id}
+          projectName={project.name}
+          onClose={() => setShowShareModal(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function RoleCard({
+  role,
+  project,
+  requests,
+}: {
+  role: ProjectDetailProps["project"]["roles"][number];
+  project: ProjectDetailProps["project"];
+  requests: PackageRequest[];
+}) {
+  const allRoleTalents = role.role_packages?.flatMap(
+    (rp) => rp.packages?.package_talents || []
+  ) || [];
+  const talentCount = allRoleTalents.length;
+  const pickCount = allRoleTalents.filter((t) => t.client_pick).length;
+  const mediaRequested = allRoleTalents.filter((t: any) => t.media_requested).length;
+  const mediaUploaded = allRoleTalents.filter((t: any) => t.upload_status === "uploaded").length;
+  const agentIds = [
+    ...new Set(
+      role.role_packages
+        ?.map((rp) => rp.packages?.agent_id)
+        .filter(Boolean) || []
+    ),
+  ];
+  const progress = talentCount > 0 ? (pickCount / talentCount) * 100 : 0;
+  const roleRequests = requests.filter((r) => r.role_id === role.id);
+  const rolePending = roleRequests.filter((r) => r.status !== "responded").length;
+
+  return (
+    <div className="rounded-xl border border-[#1E2128] bg-[#161920] p-4">
+      <div className="flex items-start justify-between mb-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-[#E8E3D8]">{role.name}</h3>
+            {rolePending > 0 && (
+              <span className="flex items-center gap-1 text-[10px] text-amber-400">
+                <Clock size={10} />
+                {rolePending} pending
+              </span>
+            )}
+          </div>
+          {role.brief && (
+            <p className="text-xs text-[#8B8D93] mt-0.5">
+              {role.brief}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {talentCount > 0 && (
+            <a
+              href={`/api/reports/role/${role.id}?format=pdf&projectId=${project.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-xs text-[#8B8D93] hover:text-[#E8E3D8] transition"
+              title="Export PDF"
+            >
+              <FileDown size={12} />
+            </a>
+          )}
+          <Link
+            href={`/client/projects/${project.id}/roles/${role.id}`}
+            className="flex items-center gap-1 text-xs text-[#C9A84C] hover:underline"
+          >
+            Review Talent
+            <ChevronRight size={12} />
+          </Link>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      {talentCount > 0 && (
+        <div className="mb-3">
+          <div className="flex items-center justify-between text-[10px] text-[#8B8D93] mb-1">
+            <span>Selection progress</span>
+            <span>{pickCount} of {talentCount} selected</span>
+          </div>
+          <div className="h-1.5 rounded-full bg-[#1E2128] overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-[#C9A84C] to-[#B8943F] transition-all duration-500"
+              style={{ width: `${Math.min(progress, 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Agency chips */}
+      {agentIds.length > 0 && (
+        <div className="flex gap-1 mb-2">
+          {agentIds.map((aid) => {
+            const pkg = role.role_packages?.find(
+              (rp) => rp.packages?.agent_id === aid
+            )?.packages;
+            const label =
+              pkg?.profiles?.agency_name ||
+              pkg?.profiles?.full_name ||
+              "Agency";
+            const agentTalentCount = role.role_packages
+              ?.filter((rp) => rp.packages?.agent_id === aid)
+              .reduce((s, rp) => s + (rp.packages?.package_talents?.length || 0), 0) || 0;
+            return (
+              <span
+                key={aid}
+                className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+                style={{
+                  backgroundColor: `${agencyColor(aid)}20`,
+                  color: agencyColor(aid),
+                }}
+              >
+                {label} ({agentTalentCount})
+              </span>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Talent strip */}
+      {allRoleTalents.length > 0 && (
+        <div className="flex gap-1 overflow-x-auto pb-1 mb-2">
+          {allRoleTalents.slice(0, 12).map((pt) => {
+            const pkg = role.role_packages?.find((rp) =>
+              rp.packages?.package_talents?.some(
+                (t) => t.id === pt.id
+              )
+            )?.packages;
+            const color = pkg?.agent_id
+              ? agencyColor(pkg.agent_id)
+              : "#8B8D93";
+            const initials = pt.talents?.full_name
+              ?.split(" ")
+              .map((n: string) => n[0])
+              .join("")
+              .toUpperCase()
+              .slice(0, 2) || "?";
+
+            return (
+              <div
+                key={pt.id}
+                className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-semibold border-2 ${
+                  pt.client_pick
+                    ? "border-[#C9A84C]"
+                    : "border-transparent"
+                }`}
+                style={{ backgroundColor: `${color}30`, color }}
+                title={pt.talents?.full_name}
+              >
+                {initials}
+              </div>
+            );
+          })}
+          {allRoleTalents.length > 12 && (
+            <span className="text-xs text-[#8B8D93] self-center ml-1">
+              +{allRoleTalents.length - 12}
+            </span>
+          )}
+        </div>
+      )}
+
+      <div className="flex items-center gap-4 text-xs text-[#8B8D93]">
+        <span>{talentCount} talent</span>
+        <span className="text-[#C9A84C]">{pickCount} pick{pickCount !== 1 ? "s" : ""}</span>
+        {mediaRequested > 0 && (
+          <span>{mediaUploaded}/{mediaRequested} media uploaded</span>
+        )}
+        {pickCount > 0 && mediaRequested === 0 && (
+          <button className="text-[#C9A84C] hover:underline">
+            Request Media ({pickCount})
+          </button>
+        )}
+      </div>
     </div>
   );
 }

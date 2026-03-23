@@ -59,12 +59,73 @@ export default async function ProjectsPage() {
     allRequests = requests || [];
   }
 
-  // Assemble enriched projects
-  const enrichedProjects = (projects || []).map((project: any) => {
-    const projectRequests = allRequests.filter((r: any) => r.project_id === project.id);
+  // Fetch shared projects (where user is a collaborator)
+  const { data: collabEntries } = await supabase
+    .from("project_collaborators")
+    .select("project_id, role, projects(id, name, brand, type, status, deadline, created_at, client_id, roles(id, name, brief))")
+    .eq("user_id", user.id);
+
+  // Fetch owner profiles for shared projects
+  const sharedOwnerIds = [...new Set((collabEntries || []).map((c: any) => c.projects?.client_id).filter(Boolean))];
+  let ownerProfiles: Record<string, string> = {};
+  if (sharedOwnerIds.length > 0) {
+    const { data: ownerData } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", sharedOwnerIds as string[]);
+    for (const p of ownerData || []) {
+      ownerProfiles[p.id] = p.full_name;
+    }
+  }
+
+  // Get role_packages for shared projects too
+  const sharedRoleIds = (collabEntries || []).flatMap((c: any) =>
+    (c.projects?.roles || []).map((r: any) => r.id)
+  );
+  let sharedRolePackages: any[] = [];
+  if (sharedRoleIds.length > 0) {
+    const { data: srp } = await supabase
+      .from("role_packages")
+      .select(`
+        role_id, package_id,
+        packages(
+          id, name, agent_id, status, last_viewed_at,
+          package_talents(id, talent_id, client_pick, media_requested, upload_status)
+        )
+      `)
+      .in("role_id", sharedRoleIds);
+    sharedRolePackages = srp || [];
+  }
+
+  // Fetch agent profiles for shared projects
+  const sharedAgentIds = [...new Set(sharedRolePackages.map((rp: any) => rp.packages?.agent_id).filter(Boolean))];
+  if (sharedAgentIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, full_name, agency_name")
+      .in("id", sharedAgentIds as string[]);
+    for (const p of profiles || []) {
+      agentProfiles[p.id] = p;
+    }
+  }
+
+  // Fetch package requests for shared projects
+  const sharedProjectIds = (collabEntries || []).map((c: any) => c.project_id).filter(Boolean);
+  let sharedRequests: any[] = [];
+  if (sharedProjectIds.length > 0) {
+    const { data: sreqs } = await supabase
+      .from("package_requests")
+      .select("id, agent_email, project_id, role_id, brief, created_at, status")
+      .in("project_id", sharedProjectIds)
+      .order("created_at", { ascending: false });
+    sharedRequests = sreqs || [];
+  }
+
+  function enrichProject(project: any, rps: any[], reqs: any[], isShared = false, ownerName = "") {
+    const projectRequests = reqs.filter((r: any) => r.project_id === project.id);
     const roles = (project.roles || []).map((role: any) => {
-      const rps = rolePackages.filter((rp: any) => rp.role_id === role.id);
-      const packages = rps.map((rp: any) => ({
+      const roleRps = rps.filter((rp: any) => rp.role_id === role.id);
+      const packages = roleRps.map((rp: any) => ({
         ...rp.packages,
         profiles: rp.packages?.agent_id ? agentProfiles[rp.packages.agent_id] : null,
       })).filter(Boolean);
@@ -99,6 +160,8 @@ export default async function ProjectsPage() {
       ...project,
       roles,
       requests: projectRequests,
+      isShared,
+      ownerName,
       stats: {
         roleCount: roles.length,
         totalTalent,
@@ -110,7 +173,20 @@ export default async function ProjectsPage() {
         totalRequests: projectRequests.length,
       },
     };
-  });
+  }
 
-  return <ProjectDashboard projects={enrichedProjects} />;
+  // Assemble enriched projects (owned)
+  const enrichedProjects = (projects || []).map((project: any) =>
+    enrichProject(project, rolePackages, allRequests)
+  );
+
+  // Assemble enriched shared projects
+  const enrichedSharedProjects = (collabEntries || [])
+    .filter((c: any) => c.projects)
+    .map((c: any) => {
+      const ownerName = ownerProfiles[c.projects.client_id] || "Unknown";
+      return enrichProject(c.projects, sharedRolePackages, sharedRequests, true, ownerName);
+    });
+
+  return <ProjectDashboard projects={enrichedProjects} sharedProjects={enrichedSharedProjects} />;
 }

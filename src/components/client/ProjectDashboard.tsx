@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   FolderKanban,
   Users,
@@ -10,12 +12,18 @@ import {
   CheckCircle,
   AlertTriangle,
   ChevronRight,
+  ChevronDown,
   Film,
   Tv,
   Clapperboard,
   Image as ImageIcon,
+  Pencil,
+  Copy,
+  Archive,
+  Trash2,
 } from "lucide-react";
-import { Badge } from "@/components/ui";
+import { Badge, KebabMenu } from "@/components/ui";
+import type { KebabMenuItem } from "@/components/ui";
 
 function agencyColor(agentId: string): string {
   let hash = 0;
@@ -57,6 +65,8 @@ interface EnrichedProject {
   status: string;
   deadline: string | null;
   created_at: string;
+  isShared?: boolean;
+  ownerName?: string;
   roles: {
     id: string;
     name: string;
@@ -82,12 +92,119 @@ interface EnrichedProject {
   };
 }
 
-export default function ProjectDashboard({ projects }: { projects: EnrichedProject[] }) {
+export default function ProjectDashboard({
+  projects: initialProjects,
+  sharedProjects: initialSharedProjects = [],
+}: {
+  projects: EnrichedProject[];
+  sharedProjects?: EnrichedProject[];
+}) {
+  const router = useRouter();
+  const [projects, setProjects] = useState(initialProjects);
+  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [toast, setToast] = useState<string | null>(null);
+
   const activeProjects = projects.filter((p) => p.status === "active" || p.status === "casting");
   const totalTalent = projects.reduce((s, p) => s + p.stats.totalTalent, 0);
   const totalPicks = projects.reduce((s, p) => s + p.stats.totalPicks, 0);
   const pendingRequests = projects.reduce((s, p) => s + p.stats.pendingRequests, 0);
   const overdueProjects = projects.filter((p) => p.deadline && daysUntil(p.deadline) < 0 && p.status !== "wrapped" && p.status !== "archived");
+
+  function showToast(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
+  }
+
+  function toggleExpand(id: string) {
+    setExpandedProjects((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function handleRename(projectId: string) {
+    if (!renameValue.trim()) {
+      setRenamingId(null);
+      return;
+    }
+    const res = await fetch(`/api/projects/${projectId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: renameValue.trim() }),
+    });
+    if (res.ok) {
+      setProjects((prev) =>
+        prev.map((p) => (p.id === projectId ? { ...p, name: renameValue.trim() } : p))
+      );
+      showToast("Project renamed");
+    }
+    setRenamingId(null);
+  }
+
+  async function handleArchive(projectId: string) {
+    const res = await fetch(`/api/projects/${projectId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "archived" }),
+    });
+    if (res.ok) {
+      setProjects((prev) =>
+        prev.map((p) => (p.id === projectId ? { ...p, status: "archived" } : p))
+      );
+      showToast("Project archived");
+      router.refresh();
+    }
+  }
+
+  async function handleDuplicate(projectId: string) {
+    const res = await fetch(`/api/projects/${projectId}/copy`, { method: "POST" });
+    if (res.ok) {
+      showToast("Project duplicated");
+      router.refresh();
+    }
+  }
+
+  async function handleDelete(projectId: string, projectName: string) {
+    if (!confirm(`Delete "${projectName}"? This cannot be undone.`)) return;
+    const res = await fetch(`/api/projects/${projectId}`, { method: "DELETE" });
+    if (res.ok) {
+      setProjects((prev) => prev.filter((p) => p.id !== projectId));
+      showToast("Project deleted");
+    }
+  }
+
+  function getMenuItems(project: EnrichedProject): KebabMenuItem[] {
+    return [
+      {
+        label: "Rename",
+        icon: <Pencil size={14} />,
+        onClick: () => {
+          setRenameValue(project.name);
+          setRenamingId(project.id);
+        },
+      },
+      {
+        label: "Archive",
+        icon: <Archive size={14} />,
+        onClick: () => handleArchive(project.id),
+      },
+      {
+        label: "Duplicate",
+        icon: <Copy size={14} />,
+        onClick: () => handleDuplicate(project.id),
+      },
+      {
+        label: "Delete",
+        icon: <Trash2 size={14} />,
+        onClick: () => handleDelete(project.id, project.name),
+        danger: true,
+      },
+    ];
+  }
 
   return (
     <div>
@@ -146,8 +263,39 @@ export default function ProjectDashboard({ projects }: { projects: EnrichedProje
       ) : (
         <div className="space-y-4">
           {projects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
+            <ProjectCard
+              key={project.id}
+              project={project}
+              isExpanded={expandedProjects.has(project.id)}
+              isRenaming={renamingId === project.id}
+              renameValue={renameValue}
+              onRenameValueChange={setRenameValue}
+              onRenameSubmit={() => handleRename(project.id)}
+              onToggleExpand={() => toggleExpand(project.id)}
+              menuItems={getMenuItems(project)}
+            />
           ))}
+        </div>
+      )}
+
+      {/* Shared with you section */}
+      {initialSharedProjects.length > 0 && (
+        <div className="mt-10">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-[#8B8D93] mb-4">
+            Shared with you
+          </h2>
+          <div className="space-y-4">
+            {initialSharedProjects.map((project) => (
+              <SharedProjectCard key={project.id} project={project} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 rounded-lg border border-[#1E2128] bg-[#13151A] px-4 py-2.5 text-sm text-[#E8E3D8] shadow-xl shadow-black/40 animate-[fade-in_0.15s_ease-out]">
+          {toast}
         </div>
       )}
     </div>
@@ -187,7 +335,166 @@ function StatCard({
   );
 }
 
-function ProjectCard({ project }: { project: EnrichedProject }) {
+function ProjectCard({
+  project,
+  isExpanded,
+  isRenaming,
+  renameValue,
+  onRenameValueChange,
+  onRenameSubmit,
+  onToggleExpand,
+  menuItems,
+}: {
+  project: EnrichedProject;
+  isExpanded: boolean;
+  isRenaming: boolean;
+  renameValue: string;
+  onRenameValueChange: (v: string) => void;
+  onRenameSubmit: () => void;
+  onToggleExpand: () => void;
+  menuItems: KebabMenuItem[];
+}) {
+  const dl = deadlineLabel(project.deadline);
+  const TypeIcon = typeIcons[project.type?.toLowerCase()] || Clapperboard;
+
+  const statusConfig: Record<string, { label: string; color: "green" | "gold" | "muted" | "red" }> = {
+    active: { label: "Active", color: "green" },
+    casting: { label: "Casting", color: "gold" },
+    wrapped: { label: "Wrapped", color: "muted" },
+    archived: { label: "Archived", color: "muted" },
+  };
+  const sc = statusConfig[project.status] || { label: project.status, color: "muted" as const };
+
+  return (
+    <div className="rounded-xl border border-[#1E2128] bg-[#161920] hover:border-[#2A2D35] transition group">
+      {/* Header row */}
+      <div className="flex items-center justify-between p-5">
+        <Link
+          href={`/client/projects/${project.id}`}
+          className="flex items-center gap-3 min-w-0 flex-1"
+          onClick={(e) => {
+            // Prevent navigation when renaming
+            if (isRenaming) e.preventDefault();
+          }}
+        >
+          <div className="w-9 h-9 rounded-lg bg-[#1E2128] flex items-center justify-center shrink-0">
+            <TypeIcon size={18} className="text-[#8B8D93]" />
+          </div>
+          <div className="min-w-0">
+            {isRenaming ? (
+              <input
+                autoFocus
+                className="bg-[#1E2128] border border-[#2A2D35] rounded-md px-2 py-1 text-sm text-[#E8E3D8] font-semibold w-48 focus:outline-none focus:border-[#C9A84C]"
+                value={renameValue}
+                onChange={(e) => onRenameValueChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") onRenameSubmit();
+                  if (e.key === "Escape") onRenameSubmit();
+                }}
+                onBlur={onRenameSubmit}
+                onClick={(e) => e.preventDefault()}
+              />
+            ) : (
+              <h3 className="font-semibold text-[#E8E3D8] truncate">{project.name}</h3>
+            )}
+            {project.brand && (
+              <p className="text-xs text-[#8B8D93] truncate">{project.brand} &middot; {project.type}</p>
+            )}
+          </div>
+        </Link>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="hidden sm:inline text-xs text-[#8B8D93]">
+            {project.stats.roleCount} role{project.stats.roleCount !== 1 ? "s" : ""} &middot; {project.stats.totalTalent} talent
+          </span>
+          {dl && <span className={`text-xs font-medium ${dl.color}`}>{dl.text}</span>}
+          <Badge label={sc.label} color={sc.color} />
+          <KebabMenu items={menuItems} />
+          <button
+            onClick={onToggleExpand}
+            className="p-1.5 text-[#8B8D93] hover:text-[#E8E3D8] transition"
+          >
+            {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          </button>
+        </div>
+      </div>
+
+      {/* Expanded content */}
+      {isExpanded && (
+        <div className="px-5 pb-5 border-t border-[#1E2128]">
+          {/* Role progress rows */}
+          {project.roles.length > 0 && (
+            <div className="space-y-2 mt-4 mb-4">
+              {project.roles.map((role) => {
+                const progress = role.talentCount > 0 ? (role.pickCount / role.talentCount) * 100 : 0;
+                return (
+                  <div key={role.id} className="flex items-center gap-3">
+                    <span className="text-xs text-[#E8E3D8] w-28 truncate shrink-0">{role.name}</span>
+                    {/* Progress bar */}
+                    <div className="flex-1 h-1.5 rounded-full bg-[#1E2128] overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-[#C9A84C] to-[#B8943F] transition-all duration-500"
+                        style={{ width: `${Math.min(progress, 100)}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 text-[10px] text-[#8B8D93] shrink-0 w-32 justify-end">
+                      <span>{role.talentCount} talent</span>
+                      <span className="text-[#C9A84C]">{role.pickCount} picks</span>
+                      {role.agentIds.length > 0 && (
+                        <div className="flex -space-x-1">
+                          {role.agentIds.slice(0, 3).map((aid) => (
+                            <span
+                              key={aid}
+                              className="w-3 h-3 rounded-full border border-[#161920]"
+                              style={{ backgroundColor: agencyColor(aid) }}
+                              title={role.agentProfiles[aid]?.agency_name || role.agentProfiles[aid]?.full_name || ""}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Footer stats row */}
+          <div className="flex items-center justify-between pt-3 border-t border-[#1E2128]">
+            <div className="flex gap-4 text-xs text-[#8B8D93]">
+              <span className="flex items-center gap-1">
+                <Users size={12} />
+                {project.stats.totalTalent} talent
+              </span>
+              <span className="flex items-center gap-1">
+                <Star size={12} className="text-[#C9A84C]" />
+                {project.stats.totalPicks} picks
+              </span>
+              {project.stats.totalMediaRequested > 0 && (
+                <span className="flex items-center gap-1">
+                  <ImageIcon size={12} />
+                  {project.stats.totalMediaUploaded}/{project.stats.totalMediaRequested} media
+                </span>
+              )}
+            </div>
+            <div className="flex gap-3 text-xs">
+              {project.stats.totalRequests > 0 && (
+                <span className="flex items-center gap-1">
+                  <Send size={11} className="text-[#8B8D93]" />
+                  <span className="text-[#8B8D93]">
+                    {project.stats.respondedRequests}/{project.stats.totalRequests} responded
+                  </span>
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SharedProjectCard({ project }: { project: EnrichedProject }) {
   const dl = deadlineLabel(project.deadline);
   const TypeIcon = typeIcons[project.type?.toLowerCase()] || Clapperboard;
 
@@ -204,7 +511,6 @@ function ProjectCard({ project }: { project: EnrichedProject }) {
       href={`/client/projects/${project.id}`}
       className="block rounded-xl border border-[#1E2128] bg-[#161920] p-5 hover:border-[#2A2D35] transition group"
     >
-      {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-9 h-9 rounded-lg bg-[#1E2128] flex items-center justify-center shrink-0">
@@ -212,9 +518,16 @@ function ProjectCard({ project }: { project: EnrichedProject }) {
           </div>
           <div className="min-w-0">
             <h3 className="font-semibold text-[#E8E3D8] truncate">{project.name}</h3>
-            {project.brand && (
-              <p className="text-xs text-[#8B8D93] truncate">{project.brand} &middot; {project.type}</p>
-            )}
+            <div className="flex items-center gap-2">
+              {project.brand && (
+                <p className="text-xs text-[#8B8D93] truncate">{project.brand} &middot; {project.type}</p>
+              )}
+              {project.ownerName && (
+                <span className="rounded-full px-2 py-0.5 text-[10px] font-medium bg-[#C9A84C]/10 text-[#C9A84C]">
+                  by {project.ownerName}
+                </span>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -223,43 +536,6 @@ function ProjectCard({ project }: { project: EnrichedProject }) {
           <ChevronRight size={16} className="text-[#8B8D93] group-hover:text-[#C9A84C] transition" />
         </div>
       </div>
-
-      {/* Role progress rows */}
-      {project.roles.length > 0 && (
-        <div className="space-y-2 mb-4">
-          {project.roles.map((role) => {
-            const progress = role.talentCount > 0 ? (role.pickCount / role.talentCount) * 100 : 0;
-            return (
-              <div key={role.id} className="flex items-center gap-3">
-                <span className="text-xs text-[#E8E3D8] w-28 truncate shrink-0">{role.name}</span>
-                {/* Progress bar */}
-                <div className="flex-1 h-1.5 rounded-full bg-[#1E2128] overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-[#C9A84C] to-[#B8943F] transition-all duration-500"
-                    style={{ width: `${Math.min(progress, 100)}%` }}
-                  />
-                </div>
-                <div className="flex items-center gap-2 text-[10px] text-[#8B8D93] shrink-0 w-32 justify-end">
-                  <span>{role.talentCount} talent</span>
-                  <span className="text-[#C9A84C]">{role.pickCount} picks</span>
-                  {role.agentIds.length > 0 && (
-                    <div className="flex -space-x-1">
-                      {role.agentIds.slice(0, 3).map((aid) => (
-                        <span
-                          key={aid}
-                          className="w-3 h-3 rounded-full border border-[#161920]"
-                          style={{ backgroundColor: agencyColor(aid) }}
-                          title={role.agentProfiles[aid]?.agency_name || role.agentProfiles[aid]?.full_name || ""}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
 
       {/* Footer stats row */}
       <div className="flex items-center justify-between pt-3 border-t border-[#1E2128]">
@@ -272,12 +548,6 @@ function ProjectCard({ project }: { project: EnrichedProject }) {
             <Star size={12} className="text-[#C9A84C]" />
             {project.stats.totalPicks} picks
           </span>
-          {project.stats.totalMediaRequested > 0 && (
-            <span className="flex items-center gap-1">
-              <ImageIcon size={12} />
-              {project.stats.totalMediaUploaded}/{project.stats.totalMediaRequested} media
-            </span>
-          )}
         </div>
         <div className="flex gap-3 text-xs">
           {project.stats.totalRequests > 0 && (
