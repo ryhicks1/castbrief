@@ -123,6 +123,39 @@ export async function createFileRequest(
   return { id: data.id, url: data.url };
 }
 
+export async function uploadFileToDropbox(
+  accessToken: string,
+  path: string,
+  fileBuffer: ArrayBuffer,
+  contentType: string
+): Promise<{ pathDisplay: string; size: number }> {
+  const res = await fetch(
+    "https://content.dropboxapi.com/2/files/upload",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/octet-stream",
+        "Dropbox-API-Arg": JSON.stringify({
+          path,
+          mode: "add",
+          autorename: true,
+          mute: false,
+        }),
+      },
+      body: fileBuffer,
+    }
+  );
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Dropbox upload failed (${res.status}): ${text}`);
+  }
+
+  const data = await res.json();
+  return { pathDisplay: data.path_display, size: data.size };
+}
+
 export async function getSharedFolderLink(
   accessToken: string,
   path: string

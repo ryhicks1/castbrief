@@ -33,9 +33,19 @@ export async function GET(request: NextRequest) {
       })
       .eq("id", user.id);
 
-    return NextResponse.redirect(
-      new URL("/agent/dashboard?dropbox=connected", request.url)
-    );
+    // Redirect based on user role
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    const dashboardPath =
+      profile?.role === "client"
+        ? "/client/projects?dropbox=connected"
+        : "/agent/dashboard?dropbox=connected";
+
+    return NextResponse.redirect(new URL(dashboardPath, request.url));
   } catch (err) {
     console.error("Dropbox OAuth error:", err);
     return NextResponse.redirect(
