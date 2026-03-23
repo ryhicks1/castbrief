@@ -119,18 +119,23 @@ export default function OpenCallView({
     setUploading: (v: boolean) => void
   ) {
     setUploading(true);
+    setError("");
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch("/api/upload/attachment", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      if (res.ok && data.url) {
-        setUrl(data.url);
+      // Upload directly to Supabase Storage (bypasses Vercel 4.5MB body limit)
+      const supabase = createClient();
+      const ext = file.name.split(".").pop() || "bin";
+      const path = `attachments/open-call/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+      const { error: uploadErr } = await supabase.storage
+        .from("media-attachments")
+        .upload(path, file, { contentType: file.type, upsert: false });
+
+      if (uploadErr) {
+        console.error("Direct upload failed:", uploadErr.message);
+        setError("File upload failed: " + uploadErr.message);
       } else {
-        setError("File upload failed. Please try again.");
+        const { data: { publicUrl } } = supabase.storage.from("media-attachments").getPublicUrl(path);
+        setUrl(publicUrl);
       }
     } catch {
       setError("File upload failed. Please try again.");
