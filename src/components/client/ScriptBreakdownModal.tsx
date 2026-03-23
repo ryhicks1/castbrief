@@ -37,13 +37,8 @@ export default function ScriptBreakdownModal({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const validTypes = [
-      "application/pdf",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "application/msword",
-    ];
-    if (!validTypes.includes(file.type)) {
-      setError("Please upload a PDF or Word document");
+    if (file.type !== "application/pdf") {
+      setError("Please upload a PDF document");
       return;
     }
 
@@ -161,14 +156,14 @@ export default function ScriptBreakdownModal({
                 Upload your script
               </h3>
               <p className="text-sm text-[#8B8D93] mb-6 max-w-sm mx-auto">
-                Upload a PDF or Word document. AI will analyze the script and
-                extract all speaking roles with descriptions.
+                Upload a PDF script. AI will analyze it and extract all
+                speaking roles with descriptions.
               </p>
               <label className="inline-flex items-center gap-2 cursor-pointer rounded-lg bg-[#C9A84C] px-5 py-2.5 text-sm font-medium text-[#0D0F14] hover:bg-[#D4B35C] transition">
                 Choose File
                 <input
                   type="file"
-                  accept=".pdf,.doc,.docx"
+                  accept=".pdf"
                   onChange={handleFileUpload}
                   className="hidden"
                 />
