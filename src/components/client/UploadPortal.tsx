@@ -83,28 +83,22 @@ export default function UploadPortal({
     setUploadProgress(0);
 
     try {
-      const supabase = createClient();
-      const timestamp = Date.now();
-      const ext = file.name.split(".").pop() || "mp4";
-      const path = `attachments/self-tapes/${uploadToken}_${timestamp}.${ext}`;
+      // Upload via API route (uses admin client, bypasses RLS/bucket issues)
+      const formData = new FormData();
+      formData.append("file", file);
 
-      const { data, error } = await supabase.storage
-        .from("uploads")
-        .upload(path, file, {
-          cacheControl: "3600",
-          upsert: false,
-        });
+      const res = await fetch("/api/upload/attachment", {
+        method: "POST",
+        body: formData,
+      });
 
-      if (error) {
-        throw new Error(error.message);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Upload failed");
       }
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from("uploads")
-        .getPublicUrl(path);
-
-      setUploadedFileUrl(urlData.publicUrl);
+      const data = await res.json();
+      setUploadedFileUrl(data.url);
       setUploadProgress(100);
     } catch (err: any) {
       setUploadError(err.message || "Upload failed. Please try again.");
