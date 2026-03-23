@@ -83,22 +83,40 @@ export default function UploadPortal({
     setUploadProgress(0);
 
     try {
-      // Upload via API route (uses admin client, bypasses RLS/bucket issues)
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await fetch("/api/upload/attachment", {
+      // Step 1: Get a signed upload URL from the server (small request, no body limit)
+      const signedRes = await fetch("/api/upload/signed-url", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: file.name,
+          contentType: file.type,
+          token: uploadToken,
+        }),
       });
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Upload failed");
+      if (!signedRes.ok) {
+        const err = await signedRes.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to prepare upload");
       }
 
-      const data = await res.json();
-      setUploadedFileUrl(data.url);
+      const { signedUrl, publicUrl, token: uploadTok } = await signedRes.json();
+
+      // Step 2: Upload directly from browser to Supabase Storage (no size limit from Vercel)
+      setUploadProgress(10);
+
+      const uploadRes = await fetch(signedUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type || "video/mp4",
+        },
+        body: file,
+      });
+
+      if (!uploadRes.ok) {
+        throw new Error("Upload failed — please try again");
+      }
+
+      setUploadedFileUrl(publicUrl);
       setUploadProgress(100);
     } catch (err: any) {
       setUploadError(err.message || "Upload failed. Please try again.");
