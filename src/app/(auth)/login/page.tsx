@@ -49,6 +49,8 @@ function LoginForm() {
       router.push("/onboarding");
     } else if (profile.role === "agent") {
       router.push("/agent/dashboard");
+    } else if (profile.role === "talent") {
+      router.push("/talent/profile");
     } else {
       router.push("/client/projects");
     }
