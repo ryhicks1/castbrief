@@ -28,9 +28,21 @@ interface Talent {
   location: string | null;
   cultural_background: string | null;
   special_skills: string[] | null;
+  links: Record<string, string> | null;
   photo_url: string | null;
   talent_chips: TalentChip[];
 }
+
+const PLATFORM_LABELS: Record<string, string> = {
+  casting_networks: "Casting Networks",
+  actors_access: "Actors Access",
+  spotlight: "Spotlight",
+  showcast: "Showcast",
+  imdb: "IMDb",
+  youtube: "YouTube",
+  tiktok: "TikTok",
+  instagram: "Instagram",
+};
 
 interface ChipData {
   id: string;
@@ -63,6 +75,7 @@ export default function PackageBuilder({
   const [filterEthnicity, setFilterEthnicity] = useState<string>("");
   const [filterLocation, setFilterLocation] = useState<string>("");
   const [filterSkill, setFilterSkill] = useState<string>("");
+  const [filterPlatform, setFilterPlatform] = useState<string>("");
 
   const [packageName, setPackageName] = useState("");
   const [clientName, setClientName] = useState("");
@@ -82,7 +95,7 @@ export default function PackageBuilder({
   const [emailSent, setEmailSent] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
 
-  const hasActiveFilters = filterGender || filterAgeMin || filterAgeMax || filterEthnicity || filterLocation || filterSkill;
+  const hasActiveFilters = filterGender || filterAgeMin || filterAgeMax || filterEthnicity || filterLocation || filterSkill || filterPlatform;
 
   const filtered = useMemo(() => {
     return talents.filter((t) => {
@@ -109,9 +122,12 @@ export default function PackageBuilder({
       const matchesSkill =
         !filterSkill ||
         (t.special_skills && t.special_skills.some((s) => s.toLowerCase().includes(filterSkill.toLowerCase())));
-      return matchesSearch && matchesChips && matchesGender && matchesAgeMin && matchesAgeMax && matchesEthnicity && matchesLocation && matchesSkill;
+      const matchesPlatform =
+        !filterPlatform ||
+        (t.links && t.links[filterPlatform] && t.links[filterPlatform].trim() !== "");
+      return matchesSearch && matchesChips && matchesGender && matchesAgeMin && matchesAgeMax && matchesEthnicity && matchesLocation && matchesSkill && matchesPlatform;
     });
-  }, [talents, search, activeChips, filterGender, filterAgeMin, filterAgeMax, filterEthnicity, filterLocation, filterSkill]);
+  }, [talents, search, activeChips, filterGender, filterAgeMin, filterAgeMax, filterEthnicity, filterLocation, filterSkill, filterPlatform]);
 
   // Extract unique values for filter dropdowns
   const uniqueGenders = useMemo(() => [...new Set(talents.map((t) => t.gender).filter(Boolean) as string[])].sort(), [talents]);
@@ -123,6 +139,18 @@ export default function PackageBuilder({
     return [...skills].sort();
   }, [talents]);
 
+  const availablePlatforms = useMemo(() => {
+    const platforms = new Set<string>();
+    talents.forEach((t) => {
+      if (t.links) {
+        Object.entries(t.links).forEach(([key, val]) => {
+          if (val && val.trim() !== "") platforms.add(key);
+        });
+      }
+    });
+    return [...platforms].sort();
+  }, [talents]);
+
   function clearFilters() {
     setFilterGender("");
     setFilterAgeMin("");
@@ -130,6 +158,7 @@ export default function PackageBuilder({
     setFilterEthnicity("");
     setFilterLocation("");
     setFilterSkill("");
+    setFilterPlatform("");
   }
 
   function toggleChipFilter(chipId: string) {
@@ -439,6 +468,21 @@ export default function PackageBuilder({
               onChange={setFilterSkill}
               options={uniqueSkills}
             />
+            <div>
+              <label className="block text-[10px] text-[#8B8D93] mb-0.5">Platform</label>
+              <select
+                value={filterPlatform}
+                onChange={(e) => setFilterPlatform(e.target.value)}
+                className="w-full rounded border border-[#2A2D35] bg-[#0D0F14] px-2 py-1 text-xs text-[#E8E3D8] focus:border-[#B8964C] focus:outline-none"
+              >
+                <option value="">All</option>
+                {availablePlatforms.map((key) => (
+                  <option key={key} value={key}>
+                    {PLATFORM_LABELS[key] || key}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         )}
 

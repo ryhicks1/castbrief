@@ -17,12 +17,25 @@ interface Talent {
   id: string;
   full_name: string;
   age: number | null;
+  gender: string | null;
   location: string | null;
   cultural_background: string | null;
+  special_skills: string[] | null;
   photo_url: string | null;
   links: Record<string, string>;
   talent_chips: TalentChip[];
 }
+
+const PLATFORM_LABELS: Record<string, string> = {
+  casting_networks: "Casting Networks",
+  actors_access: "Actors Access",
+  spotlight: "Spotlight",
+  showcast: "Showcast",
+  imdb: "IMDb",
+  youtube: "YouTube",
+  tiktok: "TikTok",
+  instagram: "Instagram",
+};
 
 interface ChipData {
   id: string;
@@ -76,6 +89,16 @@ export default function RosterClient({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 20;
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterGender, setFilterGender] = useState("");
+  const [filterAgeMin, setFilterAgeMin] = useState("");
+  const [filterAgeMax, setFilterAgeMax] = useState("");
+  const [filterEthnicity, setFilterEthnicity] = useState("");
+  const [filterLocation, setFilterLocation] = useState("");
+  const [filterSkill, setFilterSkill] = useState("");
+  const [filterPlatform, setFilterPlatform] = useState("");
+
+  const hasActiveFilters = filterGender || filterAgeMin || filterAgeMax || filterEthnicity || filterLocation || filterSkill || filterPlatform;
 
   const filtered = useMemo(() => {
     return talents.filter((t) => {
@@ -90,10 +113,59 @@ export default function RosterClient({
       const matchesChips =
         activeChips.size === 0 ||
         t.talent_chips.some((tc) => activeChips.has(tc.chip_id));
+      const matchesGender =
+        !filterGender || (t.gender && t.gender.toLowerCase() === filterGender.toLowerCase());
+      const matchesAgeMin =
+        !filterAgeMin || (t.age != null && t.age >= parseInt(filterAgeMin));
+      const matchesAgeMax =
+        !filterAgeMax || (t.age != null && t.age <= parseInt(filterAgeMax));
+      const matchesEthnicity =
+        !filterEthnicity ||
+        (t.cultural_background && t.cultural_background.toLowerCase().includes(filterEthnicity.toLowerCase()));
+      const matchesLocation =
+        !filterLocation ||
+        (t.location && t.location.toLowerCase().includes(filterLocation.toLowerCase()));
+      const matchesSkill =
+        !filterSkill ||
+        (t.special_skills && t.special_skills.some((s) => s.toLowerCase().includes(filterSkill.toLowerCase())));
+      const matchesPlatform =
+        !filterPlatform ||
+        (t.links && t.links[filterPlatform] && t.links[filterPlatform].trim() !== "");
 
-      return matchesSearch && matchesChips;
+      return matchesSearch && matchesChips && matchesGender && matchesAgeMin && matchesAgeMax && matchesEthnicity && matchesLocation && matchesSkill && matchesPlatform;
     });
-  }, [talents, search, activeChips]);
+  }, [talents, search, activeChips, filterGender, filterAgeMin, filterAgeMax, filterEthnicity, filterLocation, filterSkill, filterPlatform]);
+
+  const uniqueGenders = useMemo(() => [...new Set(talents.map((t) => t.gender).filter(Boolean) as string[])].sort(), [talents]);
+  const uniqueLocations = useMemo(() => [...new Set(talents.map((t) => t.location).filter(Boolean) as string[])].sort(), [talents]);
+  const uniqueEthnicities = useMemo(() => [...new Set(talents.map((t) => t.cultural_background).filter(Boolean) as string[])].sort(), [talents]);
+  const uniqueSkills = useMemo(() => {
+    const skills = new Set<string>();
+    talents.forEach((t) => t.special_skills?.forEach((s) => skills.add(s)));
+    return [...skills].sort();
+  }, [talents]);
+  const availablePlatforms = useMemo(() => {
+    const platforms = new Set<string>();
+    talents.forEach((t) => {
+      if (t.links) {
+        Object.entries(t.links).forEach(([key, val]) => {
+          if (val && val.trim() !== "") platforms.add(key);
+        });
+      }
+    });
+    return [...platforms].sort();
+  }, [talents]);
+
+  function clearFilters() {
+    setFilterGender("");
+    setFilterAgeMin("");
+    setFilterAgeMax("");
+    setFilterEthnicity("");
+    setFilterLocation("");
+    setFilterSkill("");
+    setFilterPlatform("");
+    setPage(1);
+  }
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -426,18 +498,85 @@ export default function RosterClient({
         />
       </div>
 
-      {/* Chip filters */}
-      {chips.length > 0 && (
-        <div className="mb-6 flex flex-wrap gap-2">
-          {chips.map((chip) => (
-            <Chip
-              key={chip.id}
-              label={chip.label}
-              color={chip.color}
-              active={activeChips.has(chip.id)}
-              onClick={() => toggleChipFilter(chip.id)}
-            />
-          ))}
+      {/* Filter toggle + chips */}
+      <div className="flex items-center gap-2 mb-3">
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+            showFilters || hasActiveFilters
+              ? "bg-[#B8964C]/20 text-[#B8964C] border border-[#B8964C]/30"
+              : "bg-[#1E2128] text-[#8B8D93] border border-[#2A2D35] hover:text-[#E8E3D8]"
+          }`}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+          Filters
+          {hasActiveFilters && <span className="ml-1 text-[10px]">●</span>}
+        </button>
+        {hasActiveFilters && (
+          <button onClick={clearFilters} className="text-[10px] text-[#8B8D93] hover:text-red-400 transition">
+            Clear all
+          </button>
+        )}
+        {chips.length > 0 && (
+          <div className="flex-1 flex flex-wrap gap-1.5 overflow-hidden">
+            {chips.map((chip) => (
+              <Chip
+                key={chip.id}
+                label={chip.label}
+                color={chip.color}
+                active={activeChips.has(chip.id)}
+                onClick={() => toggleChipFilter(chip.id)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Filter panel */}
+      {showFilters && (
+        <div className="mb-4 rounded-lg border border-[#1E2128] bg-[#13151A] p-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+          <div>
+            <label className="block text-[10px] text-[#8B8D93] mb-0.5">Gender</label>
+            <select value={filterGender} onChange={(e) => { setFilterGender(e.target.value); setPage(1); }} className="w-full rounded border border-[#2A2D35] bg-[#0D0F14] px-2 py-1 text-xs text-[#E8E3D8] focus:border-[#B8964C] focus:outline-none">
+              <option value="">All</option>
+              {(uniqueGenders.length > 0 ? uniqueGenders : ["Male", "Female", "Non-binary", "Other"]).map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-[10px] text-[#8B8D93] mb-0.5">Age Range</label>
+            <div className="flex gap-1">
+              <input type="number" placeholder="Min" value={filterAgeMin} onChange={(e) => { setFilterAgeMin(e.target.value); setPage(1); }} className="w-full rounded border border-[#2A2D35] bg-[#0D0F14] px-2 py-1 text-xs text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#B8964C] focus:outline-none" />
+              <input type="number" placeholder="Max" value={filterAgeMax} onChange={(e) => { setFilterAgeMax(e.target.value); setPage(1); }} className="w-full rounded border border-[#2A2D35] bg-[#0D0F14] px-2 py-1 text-xs text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#B8964C] focus:outline-none" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-[10px] text-[#8B8D93] mb-0.5">Ethnicity</label>
+            <select value={filterEthnicity} onChange={(e) => { setFilterEthnicity(e.target.value); setPage(1); }} className="w-full rounded border border-[#2A2D35] bg-[#0D0F14] px-2 py-1 text-xs text-[#E8E3D8] focus:border-[#B8964C] focus:outline-none">
+              <option value="">All</option>
+              {uniqueEthnicities.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-[10px] text-[#8B8D93] mb-0.5">Location</label>
+            <select value={filterLocation} onChange={(e) => { setFilterLocation(e.target.value); setPage(1); }} className="w-full rounded border border-[#2A2D35] bg-[#0D0F14] px-2 py-1 text-xs text-[#E8E3D8] focus:border-[#B8964C] focus:outline-none">
+              <option value="">All</option>
+              {uniqueLocations.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-[10px] text-[#8B8D93] mb-0.5">Skills</label>
+            <select value={filterSkill} onChange={(e) => { setFilterSkill(e.target.value); setPage(1); }} className="w-full rounded border border-[#2A2D35] bg-[#0D0F14] px-2 py-1 text-xs text-[#E8E3D8] focus:border-[#B8964C] focus:outline-none">
+              <option value="">All</option>
+              {uniqueSkills.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-[10px] text-[#8B8D93] mb-0.5">Platform</label>
+            <select value={filterPlatform} onChange={(e) => { setFilterPlatform(e.target.value); setPage(1); }} className="w-full rounded border border-[#2A2D35] bg-[#0D0F14] px-2 py-1 text-xs text-[#E8E3D8] focus:border-[#B8964C] focus:outline-none">
+              <option value="">All</option>
+              {availablePlatforms.map((key) => <option key={key} value={key}>{PLATFORM_LABELS[key] || key}</option>)}
+            </select>
+          </div>
         </div>
       )}
 
