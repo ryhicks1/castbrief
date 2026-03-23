@@ -105,8 +105,13 @@ export default function ProjectDashboard({
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [toast, setToast] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
 
   const activeProjects = projects.filter((p) => p.status === "active" || p.status === "casting");
+  const archivedProjects = projects.filter((p) => p.status === "archived");
+  const displayedProjects = showArchived
+    ? projects
+    : projects.filter((p) => p.status !== "archived");
   const totalTalent = projects.reduce((s, p) => s + p.stats.totalTalent, 0);
   const totalPicks = projects.reduce((s, p) => s + p.stats.totalPicks, 0);
   const pendingRequests = projects.reduce((s, p) => s + p.stats.pendingRequests, 0);
@@ -145,17 +150,18 @@ export default function ProjectDashboard({
     setRenamingId(null);
   }
 
-  async function handleArchive(projectId: string) {
+  async function handleArchive(projectId: string, currentStatus: string) {
+    const newStatus = currentStatus === "archived" ? "active" : "archived";
     const res = await fetch(`/api/projects/${projectId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "archived" }),
+      body: JSON.stringify({ status: newStatus }),
     });
     if (res.ok) {
       setProjects((prev) =>
-        prev.map((p) => (p.id === projectId ? { ...p, status: "archived" } : p))
+        prev.map((p) => (p.id === projectId ? { ...p, status: newStatus } : p))
       );
-      showToast("Project archived");
+      showToast(newStatus === "archived" ? "Project archived" : "Project unarchived");
       router.refresh();
     }
   }
@@ -188,9 +194,9 @@ export default function ProjectDashboard({
         },
       },
       {
-        label: "Archive",
+        label: project.status === "archived" ? "Unarchive" : "Archive",
         icon: <Archive size={14} />,
-        onClick: () => handleArchive(project.id),
+        onClick: () => handleArchive(project.id, project.status),
       },
       {
         label: "Duplicate",
@@ -209,7 +215,21 @@ export default function ProjectDashboard({
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-bold text-[#E8E3D8]">Dashboard</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-bold text-[#E8E3D8]">Dashboard</h1>
+          {archivedProjects.length > 0 && (
+            <button
+              onClick={() => setShowArchived(!showArchived)}
+              className={`text-xs rounded-full px-3 py-1 transition ${
+                showArchived
+                  ? "bg-[#B8964C]/20 text-[#B8964C] border border-[#B8964C]/30"
+                  : "bg-[#1E2128] text-[#8B8D93] border border-[#2A2D35] hover:text-[#E8E3D8]"
+              }`}
+            >
+              {showArchived ? "Hide Archived" : `Show Archived (${archivedProjects.length})`}
+            </button>
+          )}
+        </div>
         <Link
           href="/client/projects/new"
           className="inline-flex items-center justify-center rounded-lg bg-[#B8964C] px-4 py-2 text-sm font-semibold text-[#0F0F12] hover:bg-[#C9A64C] hover:shadow-lg hover:shadow-[#B8964C]/10 transition-all duration-300"
@@ -246,7 +266,7 @@ export default function ProjectDashboard({
         </div>
       )}
 
-      {projects.length === 0 ? (
+      {displayedProjects.length === 0 && projects.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24">
           <div className="w-16 h-16 rounded-full bg-[#1E2128] flex items-center justify-center mb-4">
             <FolderKanban size={28} className="text-[#8B8D93]" />
@@ -262,7 +282,7 @@ export default function ProjectDashboard({
         </div>
       ) : (
         <div className="space-y-4">
-          {projects.map((project) => (
+          {displayedProjects.map((project) => (
             <ProjectCard
               key={project.id}
               project={project}

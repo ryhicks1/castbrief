@@ -11,6 +11,7 @@ const projectTypes = [
   "Music Video",
   "Theatre",
   "Short Film",
+  "Vertical Short",
   "Web Series",
   "Other",
 ];
@@ -85,7 +86,7 @@ export default function NewProjectPage() {
 
         <div>
           <label className="block text-sm text-[#E8E3D8] mb-1">
-            Brand / Studio
+            Brand / Studio / Client
           </label>
           <input
             type="text"
