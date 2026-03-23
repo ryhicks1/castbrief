@@ -21,6 +21,8 @@ import {
   Copy,
   Archive,
   Trash2,
+  Mail,
+  X,
 } from "lucide-react";
 import { Badge, KebabMenu } from "@/components/ui";
 import type { KebabMenuItem } from "@/components/ui";
@@ -106,16 +108,19 @@ export default function ProjectDashboard({
   const [renameValue, setRenameValue] = useState("");
   const [toast, setToast] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
+  const [emailModalProject, setEmailModalProject] = useState<EnrichedProject | null>(null);
+  const [emailMessage, setEmailMessage] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   const activeProjects = projects.filter((p) => p.status === "active" || p.status === "casting");
-  const archivedProjects = projects.filter((p) => p.status === "archived");
+  const archivedProjects = projects.filter((p) => p.status === "archived" || p.status === "closed");
   const displayedProjects = showArchived
     ? projects
-    : projects.filter((p) => p.status !== "archived");
+    : projects.filter((p) => p.status !== "archived" && p.status !== "closed");
   const totalTalent = projects.reduce((s, p) => s + p.stats.totalTalent, 0);
   const totalPicks = projects.reduce((s, p) => s + p.stats.totalPicks, 0);
   const pendingRequests = projects.reduce((s, p) => s + p.stats.pendingRequests, 0);
-  const overdueProjects = projects.filter((p) => p.deadline && daysUntil(p.deadline) < 0 && p.status !== "wrapped" && p.status !== "archived");
+  const overdueProjects = projects.filter((p) => p.deadline && daysUntil(p.deadline) < 0 && p.status !== "wrapped" && p.status !== "archived" && p.status !== "closed");
 
   function showToast(msg: string) {
     setToast(msg);
@@ -183,6 +188,30 @@ export default function ProjectDashboard({
     }
   }
 
+  async function handleEmailAgents() {
+    if (!emailModalProject || !emailMessage.trim()) return;
+    setSendingEmail(true);
+    try {
+      const res = await fetch(`/api/projects/${emailModalProject.id}/email-agents`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: emailMessage.trim() }),
+      });
+      if (res.ok) {
+        showToast("Emails sent to agents");
+        setEmailModalProject(null);
+        setEmailMessage("");
+      } else {
+        const data = await res.json();
+        showToast(data.error || "Failed to send emails");
+      }
+    } catch (err) {
+      showToast("Failed to send emails");
+    } finally {
+      setSendingEmail(false);
+    }
+  }
+
   function getMenuItems(project: EnrichedProject): KebabMenuItem[] {
     return [
       {
@@ -191,6 +220,14 @@ export default function ProjectDashboard({
         onClick: () => {
           setRenameValue(project.name);
           setRenamingId(project.id);
+        },
+      },
+      {
+        label: "Email All Agents",
+        icon: <Mail size={14} />,
+        onClick: () => {
+          setEmailModalProject(project);
+          setEmailMessage("");
         },
       },
       {
@@ -312,6 +349,50 @@ export default function ProjectDashboard({
         </div>
       )}
 
+      {/* Email All Agents Modal */}
+      {emailModalProject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setEmailModalProject(null)} />
+          <div className="relative w-full max-w-md rounded-xl border border-[#1E2128] bg-[#13151A] p-6 shadow-2xl">
+            <button
+              onClick={() => setEmailModalProject(null)}
+              className="absolute top-4 right-4 text-[#8B8D93] hover:text-[#E8E3D8] transition"
+            >
+              <X size={18} />
+            </button>
+            <div className="flex items-center gap-2 mb-1">
+              <Mail size={18} className="text-[#C9A84C]" />
+              <h2 className="text-lg font-bold text-[#E8E3D8]">Email All Agents</h2>
+            </div>
+            <p className="text-xs text-[#8B8D93] mb-4">
+              Send a message to all agents associated with <span className="text-[#E8E3D8]">{emailModalProject.name}</span>.
+            </p>
+            <textarea
+              value={emailMessage}
+              onChange={(e) => setEmailMessage(e.target.value)}
+              placeholder="Type your message to agents..."
+              rows={5}
+              className="w-full rounded-lg border border-[#2A2D35] bg-[#0D0F14] px-3 py-2 text-sm text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#C9A84C] focus:outline-none resize-none mb-4"
+            />
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setEmailModalProject(null)}
+                className="rounded-lg bg-[#1E2128] px-4 py-2 text-sm text-[#8B8D93] hover:text-[#E8E3D8] transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleEmailAgents}
+                disabled={sendingEmail || !emailMessage.trim()}
+                className="rounded-lg bg-gradient-to-r from-[#C9A84C] to-[#B8943F] px-4 py-2 text-sm font-semibold text-[#0D0F14] hover:from-[#D4B35C] hover:to-[#C9A84C] transition disabled:opacity-50"
+              >
+                {sendingEmail ? "Sending..." : "Send Email"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Toast */}
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 rounded-lg border border-[#1E2128] bg-[#13151A] px-4 py-2.5 text-sm text-[#E8E3D8] shadow-xl shadow-black/40 animate-[fade-in_0.15s_ease-out]">
@@ -382,6 +463,7 @@ function ProjectCard({
     casting: { label: "Casting", color: "gold" },
     wrapped: { label: "Wrapped", color: "muted" },
     archived: { label: "Archived", color: "muted" },
+    closed: { label: "Closed", color: "muted" },
   };
   const sc = statusConfig[project.status] || { label: project.status, color: "muted" as const };
 
@@ -523,6 +605,7 @@ function SharedProjectCard({ project }: { project: EnrichedProject }) {
     casting: { label: "Casting", color: "gold" },
     wrapped: { label: "Wrapped", color: "muted" },
     archived: { label: "Archived", color: "muted" },
+    closed: { label: "Closed", color: "muted" },
   };
   const sc = statusConfig[project.status] || { label: project.status, color: "muted" as const };
 

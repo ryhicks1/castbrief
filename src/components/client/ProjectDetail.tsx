@@ -34,7 +34,8 @@ import DocumentSection from "./DocumentSection";
 import ScriptBreakdownModal from "./ScriptBreakdownModal";
 import ShareProjectModal from "./ShareProjectModal";
 import OpenCallSetupModal from "./OpenCallSetupModal";
-import { FileText } from "lucide-react";
+import { FileText, Mail, XCircle } from "lucide-react";
+import CloseProjectModal from "./CloseProjectModal";
 
 function agencyColor(agentId: string): string {
   let hash = 0;
@@ -97,6 +98,7 @@ interface ProjectDetailProps {
       id: string;
       name: string;
       brief: string | null;
+      deadline?: string | null;
       folder_id?: string | null;
       open_call_visible?: boolean;
       role_packages: {
@@ -136,7 +138,9 @@ export default function ProjectDetail({
   const router = useRouter();
   const [roleName, setRoleName] = useState("");
   const [roleBrief, setRoleBrief] = useState("");
+  const [roleDeadline, setRoleDeadline] = useState("");
   const [roleFolderId, setRoleFolderId] = useState<string>("");
+  const [showCloseModal, setShowCloseModal] = useState(false);
   const [addingRole, setAddingRole] = useState(false);
   const [showScriptModal, setShowScriptModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -174,6 +178,7 @@ export default function ProjectDetail({
     casting: "text-[#C9A84C] bg-[#C9A84C]/10",
     wrapped: "text-[#8B8D93] bg-[#8B8D93]/10",
     archived: "text-[#6B7280] bg-[#6B7280]/10",
+    closed: "text-blue-400 bg-blue-400/10",
   };
 
   // Compute project-level stats
@@ -227,6 +232,7 @@ export default function ProjectDetail({
       project_id: project.id,
       name: roleName.trim(),
       brief: roleBrief.trim() || null,
+      deadline: roleDeadline || null,
       folder_id: roleFolderId || null,
     });
 
@@ -245,6 +251,7 @@ export default function ProjectDetail({
 
     setRoleName("");
     setRoleBrief("");
+    setRoleDeadline("");
     setRoleFolderId("");
     setAddingRole(false);
     router.refresh();
@@ -429,6 +436,15 @@ export default function ProjectDetail({
           >
             Request Package from Agent
           </Link>
+          {isOwner && project.status !== "closed" && (
+            <button
+              onClick={() => setShowCloseModal(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 transition"
+            >
+              <XCircle size={14} />
+              Close Project &amp; Release Talent
+            </button>
+          )}
         </div>
       </div>
 
@@ -527,6 +543,13 @@ export default function ProjectDetail({
             onChange={(e) => setRoleBrief(e.target.value)}
             placeholder="Brief description..."
             className="flex-1"
+          />
+          <input
+            type="date"
+            value={roleDeadline}
+            onChange={(e) => setRoleDeadline(e.target.value)}
+            className="rounded-lg border border-[#1E2128] bg-[#161920] px-3 py-2 text-sm text-[#E8E3D8] focus:border-[#C9A84C] focus:outline-none [color-scheme:dark] w-36"
+            title="Role deadline"
           />
           {folders.length > 0 && (
             <select
@@ -712,6 +735,18 @@ export default function ProjectDetail({
         />
       )}
 
+      {showCloseModal && (
+        <CloseProjectModal
+          projectId={project.id}
+          projectName={project.name}
+          onClose={() => setShowCloseModal(false)}
+          onComplete={() => {
+            setShowCloseModal(false);
+            router.refresh();
+          }}
+        />
+      )}
+
       {showOpenCallModal && (
         <OpenCallSetupModal
           projectId={project.id}
@@ -760,6 +795,7 @@ function RoleCard({
   const [renameName, setRenameName] = useState(role.name);
   const [editing, setEditing] = useState(false);
   const [editBrief, setEditBrief] = useState(role.brief || "");
+  const [editDeadline, setEditDeadline] = useState(role.deadline || "");
 
   const allRoleTalents = role.role_packages?.flatMap(
     (rp) => rp.packages?.package_talents || []
@@ -796,9 +832,19 @@ function RoleCard({
     await fetch(`/api/roles/${role.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: renameName.trim() || role.name, brief: editBrief.trim() || null }),
+      body: JSON.stringify({ name: renameName.trim() || role.name, brief: editBrief.trim() || null, deadline: editDeadline || null }),
     });
     setEditing(false);
+    onRefresh?.();
+  }
+
+  async function handleCopyDeadlineToAll() {
+    if (!role.deadline) return;
+    await fetch(`/api/projects/${project.id}/copy-deadline`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ deadline: role.deadline, source_role_id: role.id }),
+    });
     onRefresh?.();
   }
 
@@ -852,8 +898,11 @@ function RoleCard({
   }
 
   const menuItems: KebabMenuItem[] = [
-    { label: "Edit Role", icon: <Pencil size={14} />, onClick: () => { setEditing(true); setRenameName(role.name); setEditBrief(role.brief || ""); } },
+    { label: "Edit Role", icon: <Pencil size={14} />, onClick: () => { setEditing(true); setRenameName(role.name); setEditBrief(role.brief || ""); setEditDeadline(role.deadline || ""); } },
     { label: "Duplicate", icon: <Copy size={14} />, onClick: handleDuplicate },
+    ...(role.deadline
+      ? [{ label: "Copy Deadline to All Roles", icon: <Calendar size={14} />, onClick: handleCopyDeadlineToAll }]
+      : []),
     ...folderMenuItems,
     ...(openCallEnabled
       ? [
@@ -886,6 +935,24 @@ function RoleCard({
             rows={3}
             className="w-full rounded-lg border border-[#2A2D35] bg-[#0D0F14] px-3 py-2 text-xs text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#C9A84C] focus:outline-none resize-none"
           />
+          <div className="flex items-center gap-2">
+            <Calendar size={13} className="text-[#8B8D93] shrink-0" />
+            <input
+              type="date"
+              value={editDeadline}
+              onChange={(e) => setEditDeadline(e.target.value)}
+              className="rounded-lg border border-[#2A2D35] bg-[#0D0F14] px-3 py-1.5 text-xs text-[#E8E3D8] focus:border-[#C9A84C] focus:outline-none [color-scheme:dark]"
+            />
+            {editDeadline && (
+              <button
+                onClick={() => setEditDeadline("")}
+                type="button"
+                className="text-[10px] text-[#8B8D93] hover:text-red-400 transition"
+              >
+                Clear
+              </button>
+            )}
+          </div>
           <div className="flex gap-2">
             <button
               onClick={handleSaveBrief}
@@ -914,6 +981,17 @@ function RoleCard({
                 {rolePending} pending
               </span>
             )}
+            {role.deadline && (() => {
+              const days = daysUntil(role.deadline);
+              const color = days < 0 ? "text-red-400" : days <= 3 ? "text-amber-400" : "text-[#8B8D93]";
+              const label = days < 0 ? `${Math.abs(days)}d overdue` : days === 0 ? "Due today" : `${days}d left`;
+              return (
+                <span className={`flex items-center gap-1 text-[10px] font-medium ${color}`}>
+                  <Calendar size={10} />
+                  {label}
+                </span>
+              );
+            })()}
           </div>
           {role.brief && (
             <p className="text-xs text-[#8B8D93] mt-0.5">
