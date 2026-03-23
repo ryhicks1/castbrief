@@ -63,20 +63,35 @@ export async function POST(request: Request) {
       }
     }
 
-    // Check if a talent row already exists for this user under this agent
+    // Check if a talent row already exists for this user (any agent, including independent)
     const { data: existingTalent } = await supabase
       .from("talents")
-      .select("id")
+      .select("id, agent_id")
       .eq("user_id", user.id)
-      .eq("agent_id", invite.agent_id)
       .single();
 
     let talentId: string;
 
     if (existingTalent) {
+      // Talent record already exists - update it to link to the inviting agent
+      // This handles both independent talent (agent_id = null) and agent transfers
+      if (existingTalent.agent_id !== invite.agent_id) {
+        const { error: updateError } = await supabase
+          .from("talents")
+          .update({ agent_id: invite.agent_id })
+          .eq("id", existingTalent.id);
+
+        if (updateError) {
+          console.error("Talent update error:", updateError);
+          return NextResponse.json(
+            { error: "Failed to link talent to agency" },
+            { status: 500 }
+          );
+        }
+      }
       talentId = existingTalent.id;
     } else {
-      // Create a talent row linked to the agent
+      // Create a new talent row linked to the agent
       const { data: newTalent, error: talentError } = await supabase
         .from("talents")
         .insert({

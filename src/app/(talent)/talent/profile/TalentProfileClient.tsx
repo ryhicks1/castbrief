@@ -11,7 +11,7 @@ interface ChipData {
 
 interface TalentData {
   id: string;
-  agent_id: string;
+  agent_id: string | null;
   full_name: string;
   age: number | null;
   location: string;
@@ -34,6 +34,7 @@ interface TalentProfileClientProps {
   chips: ChipData[];
   agencyName: string;
   isLocked: boolean;
+  isIndependent?: boolean;
 }
 
 export default function TalentProfileClient({
@@ -41,6 +42,7 @@ export default function TalentProfileClient({
   chips,
   agencyName,
   isLocked,
+  isIndependent = false,
 }: TalentProfileClientProps) {
   const [copied, setCopied] = useState(false);
   const [slugInput, setSlugInput] = useState(talent.profile_slug || "");
@@ -92,6 +94,20 @@ export default function TalentProfileClient({
 
   return (
     <div className="max-w-2xl mx-auto">
+      {/* Independent talent banner */}
+      {isIndependent && (
+        <div className="mb-6 rounded-lg border border-[#C9A84C]/30 bg-[#C9A84C]/5 p-4">
+          <p className="text-sm text-[#C9A84C] font-medium mb-1">
+            Independent Talent
+          </p>
+          <p className="text-xs text-[#8B8D93]">
+            You&apos;re not on any agency roster yet. You can still build your
+            profile and submit to open calls. When an agent invites you, your
+            profile will be linked to their roster automatically.
+          </p>
+        </div>
+      )}
+
       {/* Profile Actions Header */}
       <div className="mb-6 rounded-xl border border-[#1E2128] bg-[#13151A] p-4">
         <div className="flex items-center justify-between mb-3">
@@ -169,7 +185,7 @@ export default function TalentProfileClient({
       <TalentForm
         talent={talentForForm}
         chips={chips}
-        agentId={talent.agent_id}
+        agentId={talent.agent_id || ""}
         isLocked={isLocked}
       />
     </div>

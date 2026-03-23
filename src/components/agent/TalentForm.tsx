@@ -235,7 +235,8 @@ export default function TalentForm({
     // Upload photo if new file selected
     if (photoFile) {
       const ext = photoFile.name.split(".").pop();
-      const path = `${agentId}/${Date.now()}.${ext}`;
+      const folder = agentId || "independent";
+      const path = `${folder}/${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from("talent-photos")
         .upload(path, photoFile);
@@ -265,7 +266,7 @@ export default function TalentForm({
     }
 
     const talentData: Record<string, any> = {
-      agent_id: agentId,
+      agent_id: agentId || null,
       org_id: orgId && !orgId.startsWith("__agent__") ? orgId : null,
       full_name: form.full_name,
       age: form.age,
@@ -337,7 +338,8 @@ export default function TalentForm({
         if (photo.file) {
           // Upload file
           const ext = photo.file.name.split(".").pop();
-          const path = `${agentId}/${talentId}/${Date.now()}-${photo.sort_order}.${ext}`;
+          const folder = agentId || "independent";
+          const path = `${folder}/${talentId}/${Date.now()}-${photo.sort_order}.${ext}`;
           const { error: upErr } = await supabase.storage
             .from("talent-photos")
             .upload(path, photo.file);

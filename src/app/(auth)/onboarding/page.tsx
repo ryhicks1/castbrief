@@ -34,13 +34,22 @@ export default function OnboardingPage() {
         .eq("id", user.id)
         .single();
 
-      if (profile) {
-        const dest =
-          profile.role === "agent"
-            ? "/agent/dashboard"
-            : profile.role === "talent"
-              ? "/talent/profile"
-              : "/client/projects";
+      if (profile?.role) {
+        // Profile already has a role (e.g. set during new signup flow)
+        // Honor any pending invite token before redirecting
+        const params = new URLSearchParams(window.location.search);
+        const invToken = params.get("invite");
+        let dest: string;
+        if (invToken) {
+          dest = `/join/${invToken}`;
+        } else {
+          dest =
+            profile.role === "agent"
+              ? "/agent/dashboard"
+              : profile.role === "talent"
+                ? "/talent/profile"
+                : "/client/projects";
+        }
         router.push(dest);
         return;
       }
