@@ -42,10 +42,9 @@ export default async function TalentUploadsPage() {
   const { data: packageTalents } = await admin
     .from("package_talents")
     .select(
-      "id, upload_status, upload_token, created_at, packages(id, name, agent_id, profiles:agent_id(full_name, agency_name))"
+      "id, upload_status, upload_token, media_requested, packages(id, name, agent_id, profiles:agent_id(full_name, agency_name))"
     )
-    .eq("talent_id", talent.id)
-    .order("created_at", { ascending: false });
+    .eq("talent_id", talent.id);
 
   const items = packageTalents ?? [];
 
@@ -105,15 +104,6 @@ export default async function TalentUploadsPage() {
                 </h3>
                 <p className="text-xs text-[#8B8D93] mt-0.5">
                   {agentProfile?.agency_name || agentProfile?.full_name || ""}
-                  {pt.created_at && (
-                    <span className="ml-2">
-                      {new Date(pt.created_at).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </span>
-                  )}
                 </p>
               </div>
 
