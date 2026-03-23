@@ -756,6 +756,8 @@ function RoleCard({
 }) {
   const [renaming, setRenaming] = useState(false);
   const [renameName, setRenameName] = useState(role.name);
+  const [editing, setEditing] = useState(false);
+  const [editBrief, setEditBrief] = useState(role.brief || "");
 
   const allRoleTalents = role.role_packages?.flatMap(
     (rp) => rp.packages?.package_talents || []
@@ -783,6 +785,16 @@ function RoleCard({
       body: JSON.stringify({ name: renameName.trim() }),
     });
     setRenaming(false);
+    onRefresh?.();
+  }
+
+  async function handleSaveBrief() {
+    await fetch(`/api/roles/${role.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: renameName.trim() || role.name, brief: editBrief.trim() || null }),
+    });
+    setEditing(false);
     onRefresh?.();
   }
 
@@ -836,7 +848,7 @@ function RoleCard({
   }
 
   const menuItems: KebabMenuItem[] = [
-    { label: "Rename", icon: <Pencil size={14} />, onClick: () => { setRenaming(true); setRenameName(role.name); } },
+    { label: "Edit Role", icon: <Pencil size={14} />, onClick: () => { setEditing(true); setRenameName(role.name); setEditBrief(role.brief || ""); } },
     { label: "Duplicate", icon: <Copy size={14} />, onClick: handleDuplicate },
     ...folderMenuItems,
     ...(openCallEnabled
@@ -853,21 +865,45 @@ function RoleCard({
 
   return (
     <div className="rounded-xl border border-[#1E2128] bg-[#161920] p-4">
+      {/* Edit mode */}
+      {editing && (
+        <div className="mb-3 space-y-2">
+          <input
+            value={renameName}
+            onChange={(e) => setRenameName(e.target.value)}
+            placeholder="Role name..."
+            autoFocus
+            className="w-full rounded-lg border border-[#2A2D35] bg-[#0D0F14] px-3 py-2 text-sm font-semibold text-[#E8E3D8] focus:border-[#C9A84C] focus:outline-none"
+          />
+          <textarea
+            value={editBrief}
+            onChange={(e) => setEditBrief(e.target.value)}
+            placeholder="Role description / brief..."
+            rows={3}
+            className="w-full rounded-lg border border-[#2A2D35] bg-[#0D0F14] px-3 py-2 text-xs text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#C9A84C] focus:outline-none resize-none"
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={handleSaveBrief}
+              className="rounded-lg bg-[#C9A84C] px-3 py-1 text-xs font-semibold text-[#0D0F14] hover:bg-[#D4B35C] transition"
+            >
+              Save
+            </button>
+            <button
+              onClick={() => setEditing(false)}
+              className="rounded-lg bg-[#1E2128] px-3 py-1 text-xs text-[#8B8D93] hover:text-[#E8E3D8] transition"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!editing && (
       <div className="flex items-start justify-between mb-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            {renaming ? (
-              <input
-                value={renameName}
-                onChange={(e) => setRenameName(e.target.value)}
-                onBlur={handleRename}
-                onKeyDown={(e) => { if (e.key === "Enter") handleRename(); if (e.key === "Escape") setRenaming(false); }}
-                autoFocus
-                className="bg-transparent border-b border-[#C9A84C] text-sm font-semibold text-[#E8E3D8] outline-none px-0 py-0"
-              />
-            ) : (
-              <h3 className="font-semibold text-[#E8E3D8]">{role.name}</h3>
-            )}
+            <h3 className="font-semibold text-[#E8E3D8]">{role.name}</h3>
             {rolePending > 0 && (
               <span className="flex items-center gap-1 text-[10px] text-amber-400">
                 <Clock size={10} />
@@ -903,6 +939,7 @@ function RoleCard({
           </Link>
         </div>
       </div>
+      )}
 
       {/* Progress bar */}
       {talentCount > 0 && (
