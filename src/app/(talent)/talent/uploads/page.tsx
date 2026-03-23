@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
@@ -10,8 +11,11 @@ export default async function TalentUploadsPage() {
 
   if (!user) redirect("/login");
 
+  // Use admin client to bypass RLS for talent queries
+  const admin = createAdminClient();
+
   // Find the talent record for this user
-  const { data: talent } = await supabase
+  const { data: talent } = await admin
     .from("talents")
     .select("id")
     .eq("user_id", user.id)
@@ -35,7 +39,7 @@ export default async function TalentUploadsPage() {
   }
 
   // Fetch all package_talents for this talent, with package info
-  const { data: packageTalents } = await supabase
+  const { data: packageTalents } = await admin
     .from("package_talents")
     .select(
       "id, upload_status, upload_token, created_at, packages(id, name, agent_id, profiles:agent_id(full_name, agency_name))"
