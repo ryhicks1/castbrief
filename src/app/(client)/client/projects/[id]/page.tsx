@@ -72,6 +72,13 @@ export default async function ProjectPage({
     }
   }
 
+  // Fetch project-level documents
+  const { data: documents } = await supabase
+    .from("documents")
+    .select("*")
+    .eq("project_id", id)
+    .order("created_at", { ascending: false });
+
   // Assemble the data
   const assembledProject = {
     ...project,
@@ -94,6 +101,7 @@ export default async function ProjectPage({
       project={assembledProject as any}
       userId={user.id}
       requests={requests || []}
+      documents={documents || []}
     />
   );
 }

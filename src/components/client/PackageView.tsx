@@ -51,6 +51,13 @@ interface PackageViewProps {
   status: string;
   settings: Record<string, any>;
   talents: TalentData[];
+  branding?: {
+    logo_url: string | null;
+    contact_email: string | null;
+    contact_phone: string | null;
+    website: string | null;
+    brand_color: string | null;
+  };
 }
 
 const linkLabels: Record<string, string> = {
@@ -73,7 +80,9 @@ export default function PackageView({
   status,
   settings,
   talents: initialTalents,
+  branding,
 }: PackageViewProps) {
+  const accentColor = branding?.brand_color || "#B8964C";
   const [talents, setTalents] = useState(initialTalents);
   const [showHidden, setShowHidden] = useState(false);
   const [showMediaModal, setShowMediaModal] = useState(false);
@@ -171,9 +180,29 @@ export default function PackageView({
     <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6">
       {/* Header */}
       <div className="mb-8">
-        <p className="text-xs font-semibold uppercase tracking-widest text-[#B8964C] mb-2">
-          Talent Package from {agencyName}
-        </p>
+        <div className="flex items-center gap-3 mb-2">
+          {branding?.logo_url && (
+            <img
+              src={branding.logo_url}
+              alt={agencyName}
+              className="h-10 w-auto object-contain"
+            />
+          )}
+          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: accentColor }}>
+            Talent Package from {agencyName}
+          </p>
+        </div>
+        {branding && (branding.contact_email || branding.contact_phone || branding.website) && (
+          <p className="text-xs text-[#8B8D93] mb-2">
+            {[
+              branding.contact_email,
+              branding.contact_phone,
+              branding.website,
+            ]
+              .filter(Boolean)
+              .join("  \u00B7  ")}
+          </p>
+        )}
         <h1 className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl text-[#E8E3D8] mb-1">
           {packageName}
         </h1>
@@ -190,7 +219,8 @@ export default function PackageView({
           {picks.length > 0 && !mediaRequested && (
             <button
               onClick={() => setShowMediaModal(true)}
-              className="inline-flex items-center gap-1 rounded-lg bg-[#B8964C] px-4 py-2 text-sm font-semibold text-[#0F0F12] hover:bg-[#C9A64C] transition-all duration-300"
+              className="inline-flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-semibold text-[#0F0F12] transition-all duration-300"
+              style={{ backgroundColor: accentColor }}
             >
               Request Media ({picks.length})
             </button>

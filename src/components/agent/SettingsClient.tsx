@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Input } from "@/components/ui";
-import { Trash2, Plus, UserPlus } from "lucide-react";
+import { Trash2, Plus, UserPlus, Upload } from "lucide-react";
 
 interface Division {
   id: string;
@@ -23,6 +23,10 @@ interface Org {
   name: string;
   slug: string;
   logo_url: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  website: string | null;
+  brand_color: string | null;
 }
 
 interface SettingsClientProps {
@@ -51,6 +55,13 @@ export default function SettingsClient({
   const [newDivisionName, setNewDivisionName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"agent" | "viewer">("agent");
+  const [logoUrl, setLogoUrl] = useState(org.logo_url || "");
+  const [contactEmail, setContactEmail] = useState(org.contact_email || "");
+  const [contactPhone, setContactPhone] = useState(org.contact_phone || "");
+  const [website, setWebsite] = useState(org.website || "");
+  const [brandColor, setBrandColor] = useState(org.brand_color || "#B8964C");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [savingBranding, setSavingBranding] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -76,6 +87,68 @@ export default function SettingsClient({
       setError("Failed to update");
     }
     setSaving(false);
+  }
+
+  async function handleUploadLogo(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingLogo(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload/attachment", {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) {
+        setError("Failed to upload logo");
+        setUploadingLogo(false);
+        return;
+      }
+      const data = await res.json();
+      setLogoUrl(data.url);
+      // Auto-save logo_url
+      await fetch("/api/org/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ logo_url: data.url }),
+      });
+      setSuccess("Logo uploaded");
+      setTimeout(() => setSuccess(null), 2000);
+      router.refresh();
+    } catch {
+      setError("Failed to upload logo");
+    }
+    setUploadingLogo(false);
+  }
+
+  async function handleSaveBranding() {
+    setSavingBranding(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/org/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contact_email: contactEmail,
+          contact_phone: contactPhone,
+          website,
+          brand_color: brandColor,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || "Failed to update branding");
+      } else {
+        setSuccess("Branding updated");
+        setTimeout(() => setSuccess(null), 2000);
+        router.refresh();
+      }
+    } catch {
+      setError("Failed to update branding");
+    }
+    setSavingBranding(false);
   }
 
   async function handleAddDivision() {
@@ -210,6 +283,86 @@ export default function SettingsClient({
             </Button>
           </div>
         </div>
+      </section>
+
+      {/* Branding */}
+      <section className="rounded-xl border border-[#1E2128] bg-[#161920] p-5">
+        <h2 className="text-sm font-semibold text-[#E8E3D8] mb-4">Branding</h2>
+
+        {/* Logo upload */}
+        <div className="mb-4">
+          <label className="block text-xs text-[#8B8D93] mb-2">Logo</label>
+          <div className="flex items-center gap-4">
+            {logoUrl && (
+              <img
+                src={logoUrl}
+                alt="Organization logo"
+                className="h-10 w-auto rounded border border-[#2A2D35] object-contain bg-[#0D0F14]"
+              />
+            )}
+            <label className="inline-flex items-center gap-2 cursor-pointer rounded-lg border border-[#2A2D35] bg-[#0D0F14] px-3 py-2 text-sm text-[#E8E3D8] hover:border-[#B8964C] transition">
+              <Upload size={14} />
+              {uploadingLogo ? "Uploading..." : "Upload Logo"}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleUploadLogo}
+                disabled={uploadingLogo}
+              />
+            </label>
+          </div>
+        </div>
+
+        {/* Contact fields */}
+        <div className="space-y-3 mb-4">
+          <div>
+            <label className="block text-xs text-[#8B8D93] mb-1">Contact Email</label>
+            <input
+              type="email"
+              value={contactEmail}
+              onChange={(e) => setContactEmail(e.target.value)}
+              placeholder="hello@agency.com"
+              className="w-full rounded-lg border border-[#2A2D35] bg-[#0D0F14] px-3 py-2 text-sm text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#B8964C] focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-[#8B8D93] mb-1">Contact Phone</label>
+            <input
+              type="tel"
+              value={contactPhone}
+              onChange={(e) => setContactPhone(e.target.value)}
+              placeholder="+1 (555) 000-0000"
+              className="w-full rounded-lg border border-[#2A2D35] bg-[#0D0F14] px-3 py-2 text-sm text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#B8964C] focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-[#8B8D93] mb-1">Website</label>
+            <input
+              type="url"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              placeholder="https://agency.com"
+              className="w-full rounded-lg border border-[#2A2D35] bg-[#0D0F14] px-3 py-2 text-sm text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#B8964C] focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-[#8B8D93] mb-1">Brand Color</label>
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                value={brandColor}
+                onChange={(e) => setBrandColor(e.target.value)}
+                className="h-9 w-12 cursor-pointer rounded border border-[#2A2D35] bg-[#0D0F14] p-0.5"
+              />
+              <span className="text-sm text-[#8B8D93]">{brandColor}</span>
+            </div>
+          </div>
+        </div>
+
+        <Button onClick={handleSaveBranding} loading={savingBranding} size="sm">
+          Save Branding
+        </Button>
       </section>
 
       {/* Divisions */}

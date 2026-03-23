@@ -88,6 +88,17 @@ export async function GET(
       }
     }
 
+    // Fetch org branding from first agent
+    let orgBranding: any = {};
+    if (agentIds.length > 0) {
+      const { data: orgMember } = await supabase
+        .from("org_members")
+        .select("organizations(logo_url, contact_email, contact_phone, website, brand_color)")
+        .eq("user_id", agentIds[0])
+        .single();
+      orgBranding = (orgMember?.organizations as any) || {};
+    }
+
     // Transform talent data
     const talents: (TalentReportRow & { photo_url?: string | null })[] = [];
     for (const rp of rolePackages || []) {
@@ -122,6 +133,11 @@ export async function GET(
       projectName: project.name,
       roleName: role.name,
       subtitle: `${talents.length} talent across ${agentIds.length} agenc${agentIds.length !== 1 ? "ies" : "y"}`,
+      logoUrl: orgBranding.logo_url || null,
+      brandColor: orgBranding.brand_color || null,
+      contactEmail: orgBranding.contact_email || null,
+      contactPhone: orgBranding.contact_phone || null,
+      website: orgBranding.website || null,
     };
 
     if (format === "csv") {

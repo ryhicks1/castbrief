@@ -113,6 +113,24 @@ export default async function PublicPackagePage({
   const agencyName =
     agentProfile?.agency_name || agentProfile?.full_name || "Agency";
 
+  // Fetch org branding for the agent
+  const { data: orgMember } = await supabase
+    .from("org_members")
+    .select("organizations(logo_url, contact_email, contact_phone, website, brand_color)")
+    .eq("user_id", pkg.agent_id)
+    .single();
+
+  const orgData = orgMember?.organizations as any;
+  const branding = orgData
+    ? {
+        logo_url: orgData.logo_url ?? null,
+        contact_email: orgData.contact_email ?? null,
+        contact_phone: orgData.contact_phone ?? null,
+        website: orgData.website ?? null,
+        brand_color: orgData.brand_color ?? null,
+      }
+    : undefined;
+
   return (
     <div className="min-h-screen bg-[#0D0F14]">
       <div className="max-w-5xl mx-auto px-4 pt-4 sm:px-6">
@@ -128,6 +146,7 @@ export default async function PublicPackagePage({
         recipientName={pkg.client_name}
         status={pkg.status}
         settings={pkg.settings || {}}
+        branding={branding}
         talents={(pkg.package_talents || [])
           .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
           .map((pt: any) => ({

@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export async function getCurrentOrg(supabase: SupabaseClient, userId: string) {
   const { data } = await supabase
     .from("org_members")
-    .select("org_id, role, organizations(id, name, slug, logo_url)")
+    .select("org_id, role, organizations(id, name, slug, logo_url, contact_email, contact_phone, website, brand_color)")
     .eq("user_id", userId)
     .single();
   if (!data) return null;
@@ -65,7 +65,7 @@ export async function ensureOrg(supabase: SupabaseClient, userId: string) {
   // Final fallback: return a pseudo-org scoped to user's agent_id
   // This allows pre-migration users to still use the app
   console.warn("ensureOrg: falling back to agent_id scope for user", userId);
-  return { orgId: "__agent__" + userId, role: "admin" as const, org: { id: "", name: "My Agency", slug: "", logo_url: null } };
+  return { orgId: "__agent__" + userId, role: "admin" as const, org: { id: "", name: "My Agency", slug: "", logo_url: null, contact_email: null, contact_phone: null, website: null, brand_color: null } };
 }
 
 /**

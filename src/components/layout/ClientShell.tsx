@@ -4,11 +4,12 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, FolderKanban, Inbox, Menu, X } from "lucide-react";
+import { LayoutDashboard, FolderKanban, Inbox, BookUser, Menu, X } from "lucide-react";
 
 const navItems = [
   { href: "/client/projects", label: "Dashboard", icon: LayoutDashboard },
   { href: "/client/inbox", label: "Inbox", icon: Inbox },
+  { href: "/client/contacts", label: "Contacts", icon: BookUser },
 ];
 
 export default function ClientShell({ children }: { children: React.ReactNode }) {

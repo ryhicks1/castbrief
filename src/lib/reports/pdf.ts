@@ -17,6 +17,20 @@ interface ReportMetadata {
   roleName?: string;
   agencyName?: string;
   generatedFor?: string;
+  logoUrl?: string | null;
+  brandColor?: string | null;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
+  website?: string | null;
+}
+
+function hexToRgb(hex: string): [number, number, number] {
+  const cleaned = hex.replace("#", "");
+  const r = parseInt(cleaned.substring(0, 2), 16);
+  const g = parseInt(cleaned.substring(2, 4), 16);
+  const b = parseInt(cleaned.substring(4, 6), 16);
+  if (isNaN(r) || isNaN(g) || isNaN(b)) return [184, 150, 76];
+  return [r, g, b];
 }
 
 async function fetchImageAsBase64(url: string): Promise<string | null> {
@@ -52,13 +66,15 @@ export async function generateTalentPDF(
     })
   );
 
+  const brandRgb = metadata.brandColor ? hexToRgb(metadata.brandColor) : [184, 150, 76] as [number, number, number];
+
   function drawHeader(pageNum: number, totalPages: number) {
     // Header bar
     doc.setFillColor(15, 15, 18); // #0F0F12
     doc.rect(0, 0, pageWidth, 18, "F");
 
     // Brand
-    doc.setTextColor(184, 150, 76); // #B8964C
+    doc.setTextColor(...brandRgb);
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
     doc.text("CastingBrief", margin, 12);
@@ -105,6 +121,18 @@ export async function generateTalentPDF(
       pageWidth - margin - 20,
       pageHeight - 5
     );
+
+    // Contact info in footer
+    const contactParts = [
+      metadata.contactEmail,
+      metadata.contactPhone,
+      metadata.website,
+    ].filter(Boolean);
+    if (contactParts.length > 0) {
+      doc.setTextColor(139, 141, 147);
+      doc.setFontSize(6);
+      doc.text(contactParts.join("  |  "), margin, pageHeight - 5);
+    }
   }
 
   // Calculate layout

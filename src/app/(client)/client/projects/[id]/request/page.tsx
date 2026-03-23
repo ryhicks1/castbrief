@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button, Input, MultiSelect, Chip } from "@/components/ui";
+import { FileText } from "lucide-react";
 
 interface Agent {
   id: string;
@@ -13,6 +14,19 @@ interface Agent {
 interface Role {
   id: string;
   name: string;
+}
+
+interface ProjectDocument {
+  id: string;
+  name: string;
+  file_type: string;
+  size_bytes: number;
+}
+
+interface AgentListWithMembers {
+  id: string;
+  name: string;
+  agent_list_members: { agent_email: string; agent_name: string | null }[];
 }
 
 export default function RequestPackagePage() {
@@ -29,6 +43,10 @@ export default function RequestPackagePage() {
   const [brief, setBrief] = useState("");
   const [loading, setLoading] = useState(false);
   const [projectName, setProjectName] = useState("");
+  const [agentLists, setAgentLists] = useState<AgentListWithMembers[]>([]);
+  const [selectedListIds, setSelectedListIds] = useState<string[]>([]);
+  const [projectDocs, setProjectDocs] = useState<ProjectDocument[]>([]);
+  const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
 
   useEffect(() => {
     async function load() {
@@ -69,6 +87,28 @@ export default function RequestPackagePage() {
         }
         setAgents(Array.from(uniqueAgents.values()));
       }
+
+      // Fetch agent lists with members
+      const { data: lists } = await supabase
+        .from("agent_lists")
+        .select("id, name, agent_list_members(agent_email, agent_name)")
+        .eq("client_id", user.id);
+
+      if (lists) {
+        setAgentLists(lists as AgentListWithMembers[]);
+      }
+
+      // Fetch project-level documents
+      const { data: docs } = await supabase
+        .from("documents")
+        .select("id, name, file_type, size_bytes")
+        .eq("project_id", projectId)
+        .order("created_at", { ascending: false });
+
+      if (docs && docs.length > 0) {
+        setProjectDocs(docs);
+        setSelectedDocIds(docs.map((d: any) => d.id));
+      }
     }
     load();
   }, [projectId]);
@@ -94,7 +134,15 @@ export default function RequestPackagePage() {
     }
   }
 
-  const hasRecipients = selectedAgentIds.length > 0 || manualEmails.length > 0;
+  // Collect emails from selected lists
+  const listEmails = agentLists
+    .filter((l) => selectedListIds.includes(l.id))
+    .flatMap((l) => l.agent_list_members.map((m) => m.agent_email));
+
+  const hasRecipients =
+    selectedAgentIds.length > 0 ||
+    manualEmails.length > 0 ||
+    listEmails.length > 0;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -118,10 +166,13 @@ export default function RequestPackagePage() {
       brief: string | null;
     }[] = [];
 
-    // Collect all agent emails (selected agent IDs + manual emails)
+    // Collect all agent emails (selected agent IDs + manual emails + list emails), deduplicated
     const allAgentEmails = [
-      ...selectedAgentIds,
-      ...manualEmails,
+      ...new Set([
+        ...selectedAgentIds,
+        ...manualEmails,
+        ...listEmails,
+      ]),
     ];
 
     for (const agentEmail of allAgentEmails) {
@@ -149,7 +200,21 @@ export default function RequestPackagePage() {
     }
 
     if (rows.length > 0) {
-      await supabase.from("package_requests").insert(rows);
+      const { data: insertedRequests } = await supabase
+        .from("package_requests")
+        .insert(rows)
+        .select("id");
+
+      // Insert request_documents junction rows
+      if (insertedRequests && selectedDocIds.length > 0) {
+        const docRows = insertedRequests.flatMap((req: any) =>
+          selectedDocIds.map((docId) => ({
+            request_id: req.id,
+            document_id: docId,
+          }))
+        );
+        await supabase.from("request_documents").insert(docRows);
+      }
 
       // Send email notifications to each unique agent
       const uniqueEmails = [...new Set(rows.map((r) => r.agent_email))];
@@ -193,6 +258,43 @@ export default function RequestPackagePage() {
       <p className="text-sm text-[#8B8D93] mb-6">for {projectName}</p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Agent lists checkboxes */}
+        {agentLists.length > 0 && (
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-[#E8E3D8]">
+              Agent Lists
+            </label>
+            <div className="space-y-1.5">
+              {agentLists.map((list) => (
+                <label
+                  key={list.id}
+                  className="flex items-center gap-2 cursor-pointer text-sm text-[#E8E3D8] hover:text-[#C9A84C] transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedListIds.includes(list.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedListIds((prev) => [...prev, list.id]);
+                      } else {
+                        setSelectedListIds((prev) =>
+                          prev.filter((id) => id !== list.id)
+                        );
+                      }
+                    }}
+                    className="rounded border-[#1E2128] bg-[#0F0F12] text-[#C9A84C] focus:ring-[#B8964C]"
+                  />
+                  <span>{list.name}</span>
+                  <span className="text-xs text-[#8B8D93]">
+                    ({list.agent_list_members.length} agent
+                    {list.agent_list_members.length !== 1 ? "s" : ""})
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Agent multi-select */}
         {agents.length > 0 && (
           <MultiSelect
@@ -266,6 +368,43 @@ export default function RequestPackagePage() {
             className="w-full rounded-lg border border-[#1E2128] bg-[#0F0F12] px-3 py-2 text-sm text-[#E8E3D8] placeholder-[#6B7280] focus:border-[#B8964C] focus:outline-none focus:ring-1 focus:ring-[#B8964C] transition-all duration-300 resize-none"
           />
         </div>
+
+        {/* Documents to include */}
+        {projectDocs.length > 0 && (
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-[#E8E3D8]">
+              Documents to Include
+            </label>
+            <div className="space-y-1.5 rounded-lg border border-[#1E2128] bg-[#0F0F12] p-3">
+              {projectDocs.map((doc) => (
+                <label
+                  key={doc.id}
+                  className="flex items-center gap-2 cursor-pointer text-sm text-[#E8E3D8] hover:text-[#C9A84C] transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedDocIds.includes(doc.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedDocIds((prev) => [...prev, doc.id]);
+                      } else {
+                        setSelectedDocIds((prev) =>
+                          prev.filter((id) => id !== doc.id)
+                        );
+                      }
+                    }}
+                    className="rounded border-[#1E2128] bg-[#0F0F12] text-[#C9A84C] focus:ring-[#B8964C]"
+                  />
+                  <FileText size={14} className={doc.file_type === "pdf" ? "text-red-400" : "text-blue-400"} />
+                  <span className="truncate">{doc.name}</span>
+                  <span className="text-xs text-[#8B8D93] shrink-0">
+                    {doc.file_type.toUpperCase()}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
 
         <Button
           type="submit"

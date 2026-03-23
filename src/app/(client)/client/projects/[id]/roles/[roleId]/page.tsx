@@ -61,6 +61,13 @@ export default async function RolePage({
     }
   }
 
+  // Fetch role-level documents
+  const { data: documents } = await supabase
+    .from("documents")
+    .select("*")
+    .eq("role_id", roleId)
+    .order("created_at", { ascending: false });
+
   const assembledRole = {
     ...role,
     role_packages: (rolePackages || []).map((rp: any) => ({
@@ -77,6 +84,7 @@ export default async function RolePage({
       role={assembledRole as any}
       projectId={projectId}
       projectName={project.name}
+      documents={documents || []}
     />
   );
 }

@@ -18,14 +18,30 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { name } = await request.json();
-    if (!name?.trim()) {
-      return NextResponse.json({ error: "Name required" }, { status: 400 });
+    const body = await request.json();
+    const { name, logo_url, contact_email, contact_phone, website, brand_color } = body;
+
+    // Build update object with only provided fields
+    const updates: Record<string, any> = {};
+    if (name !== undefined) {
+      if (!name?.trim()) {
+        return NextResponse.json({ error: "Name required" }, { status: 400 });
+      }
+      updates.name = name.trim();
+    }
+    if (logo_url !== undefined) updates.logo_url = logo_url;
+    if (contact_email !== undefined) updates.contact_email = contact_email || null;
+    if (contact_phone !== undefined) updates.contact_phone = contact_phone || null;
+    if (website !== undefined) updates.website = website || null;
+    if (brand_color !== undefined) updates.brand_color = brand_color || null;
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json({ error: "No fields to update" }, { status: 400 });
     }
 
     const { error } = await supabase
       .from("organizations")
-      .update({ name: name.trim() })
+      .update(updates)
       .eq("id", orgMembership.orgId);
 
     if (error) {

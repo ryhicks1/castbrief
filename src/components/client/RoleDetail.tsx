@@ -3,7 +3,8 @@
 import { useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { MessageSquare, EyeOff, FileDown, FileSpreadsheet } from "lucide-react";
+import { MessageSquare, EyeOff, FileDown, FileSpreadsheet, ChevronDown, ChevronRight } from "lucide-react";
+import DocumentSection from "./DocumentSection";
 import { LOCATIONS } from "@/lib/constants/locations";
 import { Button } from "@/components/ui";
 
@@ -35,16 +36,28 @@ const linkLabels: Record<string, string> = {
   showcast: "SC",
 };
 
+interface DocumentRecord {
+  id: string;
+  name: string;
+  url: string;
+  file_type: string;
+  size_bytes: number;
+  created_at: string;
+  created_by: string;
+}
+
 interface RoleDetailProps {
   role: any;
   projectId: string;
   projectName: string;
+  documents?: DocumentRecord[];
 }
 
 export default function RoleDetail({
   role,
   projectId,
   projectName,
+  documents = [],
 }: RoleDetailProps) {
   const [talents, setTalents] = useState<any[]>(() => {
     // Flatten all package_talents grouped by agency
@@ -63,6 +76,7 @@ export default function RoleDetail({
   });
 
   const [mediaRequesting, setMediaRequesting] = useState(false);
+  const [docsOpen, setDocsOpen] = useState(true);
 
   const picks = talents.filter((t) => t.client_pick);
 
@@ -183,6 +197,25 @@ export default function RoleDetail({
             CSV
           </a>
         </div>
+      </div>
+
+      {/* Sides & Documents collapsible */}
+      <div className="mb-6">
+        <button
+          onClick={() => setDocsOpen(!docsOpen)}
+          className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wider text-[#8B8D93] hover:text-[#E8E3D8] transition mb-3"
+        >
+          {docsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          Sides & Documents
+          {documents.length > 0 && (
+            <span className="text-[10px] font-normal normal-case tracking-normal text-[#8B8D93]">
+              ({documents.length})
+            </span>
+          )}
+        </button>
+        {docsOpen && (
+          <DocumentSection roleId={role.id} documents={documents} />
+        )}
       </div>
 
       {/* Agency legend */}

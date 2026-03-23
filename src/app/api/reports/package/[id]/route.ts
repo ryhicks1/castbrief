@@ -65,6 +65,15 @@ export async function GET(
 
     const agencyName = agentProfile?.agency_name || agentProfile?.full_name || "Unknown Agency";
 
+    // Fetch org branding
+    const { data: orgMember } = await supabase
+      .from("org_members")
+      .select("organizations(logo_url, contact_email, contact_phone, website, brand_color)")
+      .eq("user_id", pkg.agent_id)
+      .single();
+
+    const orgBranding = (orgMember?.organizations as any) || {};
+
     // Transform talent data
     const talents: (TalentReportRow & { photo_url?: string | null })[] =
       (pkg.package_talents || []).map((pt: any) => {
@@ -94,6 +103,11 @@ export async function GET(
       agencyName,
       generatedFor: pkg.client_name || undefined,
       subtitle: `${talents.length} talent · ${pkg.status}`,
+      logoUrl: orgBranding.logo_url || null,
+      brandColor: orgBranding.brand_color || null,
+      contactEmail: orgBranding.contact_email || null,
+      contactPhone: orgBranding.contact_phone || null,
+      website: orgBranding.website || null,
     };
 
     if (format === "csv") {

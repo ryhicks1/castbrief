@@ -17,6 +17,9 @@ import {
   Calendar,
   FileDown,
 } from "lucide-react";
+import DocumentSection from "./DocumentSection";
+import ScriptBreakdownModal from "./ScriptBreakdownModal";
+import { FileText } from "lucide-react";
 
 function agencyColor(agentId: string): string {
   let hash = 0;
@@ -42,7 +45,18 @@ interface PackageRequest {
   status: string | null;
 }
 
+interface DocumentRecord {
+  id: string;
+  name: string;
+  url: string;
+  file_type: string;
+  size_bytes: number;
+  created_at: string;
+  created_by: string;
+}
+
 interface ProjectDetailProps {
+  documents?: DocumentRecord[];
   requests?: PackageRequest[];
   project: {
     id: string;
@@ -79,11 +93,12 @@ interface ProjectDetailProps {
   userId: string;
 }
 
-export default function ProjectDetail({ project, userId, requests = [] }: ProjectDetailProps) {
+export default function ProjectDetail({ project, userId, requests = [], documents = [] }: ProjectDetailProps) {
   const router = useRouter();
   const [roleName, setRoleName] = useState("");
   const [roleBrief, setRoleBrief] = useState("");
   const [addingRole, setAddingRole] = useState(false);
+  const [showScriptModal, setShowScriptModal] = useState(false);
 
   const statusColors: Record<string, string> = {
     active: "text-green-400 bg-green-400/10",
@@ -189,11 +204,26 @@ export default function ProjectDetail({ project, userId, requests = [] }: Projec
         )}
       </div>
 
+      {/* Documents */}
+      <div className="mb-6">
+        <DocumentSection projectId={project.id} documents={documents} />
+      </div>
+
       {/* Add role form */}
       <div className="mb-6">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-[#8B8D93] mb-3">
           Roles
         </h2>
+        <div className="flex gap-2 mb-4">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowScriptModal(true)}
+          >
+            <FileText size={14} />
+            Upload Script
+          </Button>
+        </div>
         <form onSubmit={handleAddRole} className="flex gap-2 mb-4">
           <Input
             type="text"
@@ -470,6 +500,17 @@ export default function ProjectDetail({ project, userId, requests = [] }: Projec
           </div>
         )}
       </div>
+
+      {showScriptModal && (
+        <ScriptBreakdownModal
+          projectId={project.id}
+          onClose={() => setShowScriptModal(false)}
+          onComplete={() => {
+            setShowScriptModal(false);
+            router.refresh();
+          }}
+        />
+      )}
     </div>
   );
 }
