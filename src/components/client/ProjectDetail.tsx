@@ -33,6 +33,7 @@ import {
 import DocumentSection from "./DocumentSection";
 import ScriptBreakdownModal from "./ScriptBreakdownModal";
 import ShareProjectModal from "./ShareProjectModal";
+import OpenCallSetupModal from "./OpenCallSetupModal";
 import { FileText } from "lucide-react";
 
 function agencyColor(agentId: string): string {
@@ -89,6 +90,9 @@ interface ProjectDetailProps {
     deadline: string | null;
     open_call_enabled?: boolean;
     open_call_token?: string | null;
+    open_call_form_url?: string | null;
+    open_call_show_project_docs?: boolean;
+    open_call_show_role_docs?: boolean;
     roles: {
       id: string;
       name: string;
@@ -141,7 +145,11 @@ export default function ProjectDetail({
   const [openCallEnabled, setOpenCallEnabled] = useState(project.open_call_enabled ?? false);
   const [openCallToken, setOpenCallToken] = useState(project.open_call_token ?? null);
   const [openCallCopied, setOpenCallCopied] = useState(false);
-  const [togglingOpenCall, setTogglingOpenCall] = useState(false);
+  const [showOpenCallModal, setShowOpenCallModal] = useState(false);
+  const [disablingOpenCall, setDisablingOpenCall] = useState(false);
+  const [openCallFormUrl, setOpenCallFormUrl] = useState(project.open_call_form_url ?? null);
+  const [openCallShowProjectDocs, setOpenCallShowProjectDocs] = useState(project.open_call_show_project_docs ?? true);
+  const [openCallShowRoleDocs, setOpenCallShowRoleDocs] = useState(project.open_call_show_role_docs ?? true);
 
   const statusColors: Record<string, string> = {
     active: "text-green-400 bg-green-400/10",
@@ -244,24 +252,21 @@ export default function ProjectDetail({
     }
   }
 
-  async function handleToggleOpenCall() {
-    setTogglingOpenCall(true);
+  async function handleDisableOpenCall() {
+    setDisablingOpenCall(true);
     try {
-      const newValue = !openCallEnabled;
       const res = await fetch(`/api/projects/${project.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ open_call_enabled: newValue }),
+        body: JSON.stringify({ open_call_enabled: false }),
       });
-      const data = await res.json();
       if (res.ok) {
-        setOpenCallEnabled(data.open_call_enabled);
-        if (data.open_call_token) setOpenCallToken(data.open_call_token);
+        setOpenCallEnabled(false);
       }
     } catch (err) {
-      console.error("Failed to toggle open call:", err);
+      console.error("Failed to disable open call:", err);
     } finally {
-      setTogglingOpenCall(false);
+      setDisablingOpenCall(false);
     }
   }
 
@@ -304,18 +309,22 @@ export default function ProjectDetail({
               Share
             </button>
           )}
-          {isOwner && (
+          {isOwner && !openCallEnabled && (
             <button
-              onClick={handleToggleOpenCall}
-              disabled={togglingOpenCall}
-              className={`flex items-center gap-1.5 rounded-lg border px-3 py-1 text-xs transition ${
-                openCallEnabled
-                  ? "border-[#C9A84C]/30 bg-[#C9A84C]/10 text-[#C9A84C]"
-                  : "border-[#1E2128] bg-[#161920] text-[#8B8D93] hover:text-[#E8E3D8] hover:border-[#2A2D35]"
-              }`}
+              onClick={() => setShowOpenCallModal(true)}
+              className="flex items-center gap-1.5 rounded-lg border border-[#1E2128] bg-[#161920] px-3 py-1 text-xs text-[#8B8D93] hover:text-[#E8E3D8] hover:border-[#2A2D35] transition"
             >
               <Globe size={13} />
-              {openCallEnabled ? "Open Call On" : "Open Call"}
+              Create Open Call
+            </button>
+          )}
+          {isOwner && openCallEnabled && (
+            <button
+              onClick={() => setShowOpenCallModal(true)}
+              className="flex items-center gap-1.5 rounded-lg border border-[#C9A84C]/30 bg-[#C9A84C]/10 px-3 py-1 text-xs text-[#C9A84C] transition hover:bg-[#C9A84C]/20"
+            >
+              <Globe size={13} />
+              Edit Open Call
             </button>
           )}
         </div>
@@ -344,6 +353,13 @@ export default function ProjectDetail({
               <ClipboardList size={10} />
               View Submissions
             </Link>
+            <button
+              onClick={handleDisableOpenCall}
+              disabled={disablingOpenCall}
+              className="flex items-center gap-1 shrink-0 rounded border border-red-500/20 bg-red-500/5 px-2 py-0.5 text-[10px] text-red-400 hover:bg-red-500/10 transition"
+            >
+              {disablingOpenCall ? "..." : "Disable"}
+            </button>
           </div>
         )}
         <div className="flex gap-3 mt-4">
@@ -633,6 +649,32 @@ export default function ProjectDetail({
           projectId={project.id}
           projectName={project.name}
           onClose={() => setShowShareModal(false)}
+        />
+      )}
+
+      {showOpenCallModal && (
+        <OpenCallSetupModal
+          projectId={project.id}
+          projectName={project.name}
+          roles={project.roles.map((r) => ({
+            id: r.id,
+            name: r.name,
+            open_call_visible: r.open_call_visible,
+          }))}
+          isEnabled={openCallEnabled}
+          token={openCallToken}
+          openCallFormUrl={openCallFormUrl}
+          openCallShowProjectDocs={openCallShowProjectDocs}
+          openCallShowRoleDocs={openCallShowRoleDocs}
+          onClose={() => setShowOpenCallModal(false)}
+          onSave={(data) => {
+            setOpenCallEnabled(data.open_call_enabled);
+            if (data.open_call_token) setOpenCallToken(data.open_call_token);
+            setOpenCallFormUrl(data.open_call_form_url);
+            setOpenCallShowProjectDocs(data.open_call_show_project_docs);
+            setOpenCallShowRoleDocs(data.open_call_show_role_docs);
+            router.refresh();
+          }}
         />
       )}
     </div>

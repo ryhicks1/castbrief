@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
   try {
@@ -35,8 +36,11 @@ export async function POST(request: Request) {
       );
     }
 
+    // Use admin client for verification (RLS might block non-owner reads)
+    const admin = createAdminClient();
+
     // Verify project exists, token matches, and open call is enabled
-    const { data: project, error: projError } = await supabase
+    const { data: project, error: projError } = await admin
       .from("projects")
       .select("id, open_call_enabled, open_call_token")
       .eq("id", project_id)
@@ -57,7 +61,7 @@ export async function POST(request: Request) {
     }
 
     // Verify role exists and is visible
-    const { data: role, error: roleError } = await supabase
+    const { data: role, error: roleError } = await admin
       .from("roles")
       .select("id, open_call_visible")
       .eq("id", role_id)
@@ -72,7 +76,7 @@ export async function POST(request: Request) {
     }
 
     // Check for duplicate submission
-    const { data: existing } = await supabase
+    const { data: existing } = await admin
       .from("open_call_submissions")
       .select("id")
       .eq("user_id", user.id)
@@ -86,8 +90,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Insert submission
-    const { data: submission, error: insertError } = await supabase
+    // Insert submission (use admin to bypass RLS)
+    const { data: submission, error: insertError } = await admin
       .from("open_call_submissions")
       .insert({
         project_id,
@@ -101,7 +105,7 @@ export async function POST(request: Request) {
         photo_url: photo_url || null,
         media_url: media_url || null,
         notes: notes || null,
-        form_completed: form_completed || false,
+        form_status: form_completed ? "completed" : "none",
         status: "pending",
       })
       .select("id")

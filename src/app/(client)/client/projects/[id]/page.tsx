@@ -18,6 +18,7 @@ export default async function ProjectPage({
     .select(`
       id, name, brand, type, status, deadline, client_id,
       open_call_enabled, open_call_token,
+      open_call_form_url, open_call_show_project_docs, open_call_show_role_docs,
       roles(id, name, brief, folder_id, open_call_visible)
     `)
     .eq("id", id)

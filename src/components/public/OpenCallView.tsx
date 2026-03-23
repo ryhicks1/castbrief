@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { LOCATIONS, LOCATIONS_BY_COUNTRY } from "@/lib/constants/locations";
 import {
@@ -10,6 +10,7 @@ import {
   ChevronRight,
   User,
   MapPin,
+  ExternalLink,
 } from "lucide-react";
 
 interface RoleDoc {
@@ -43,6 +44,9 @@ interface OpenCallViewProps {
   roles: Role[];
   projectDocuments: ProjectDoc[];
   token: string;
+  openCallFormUrl?: string | null;
+  showProjectDocs?: boolean;
+  showRoleDocs?: boolean;
 }
 
 export default function OpenCallView({
@@ -50,7 +54,11 @@ export default function OpenCallView({
   roles,
   projectDocuments,
   token,
+  openCallFormUrl,
+  showProjectDocs = true,
+  showRoleDocs = true,
 }: OpenCallViewProps) {
+  const formRef = useRef<HTMLDivElement>(null);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [userEmail, setUserEmail] = useState("");
@@ -226,7 +234,7 @@ export default function OpenCallView({
       </div>
 
       {/* Project documents */}
-      {projectDocuments.length > 0 && (
+      {showProjectDocs && projectDocuments.length > 0 && (
         <div className="mb-6">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-[#8B8D93] mb-2">
             Project Documents
@@ -262,7 +270,12 @@ export default function OpenCallView({
             {roles.map((role) => (
               <button
                 key={role.id}
-                onClick={() => setSelectedRoleId(role.id)}
+                onClick={() => {
+                  setSelectedRoleId(role.id);
+                  setTimeout(() => {
+                    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }, 100);
+                }}
                 className={`w-full text-left rounded-xl border p-4 transition ${
                   selectedRoleId === role.id
                     ? "border-[#C9A84C] bg-[#C9A84C]/5"
@@ -286,7 +299,7 @@ export default function OpenCallView({
                     </div>
                   )}
                 </div>
-                {role.documents.length > 0 && selectedRoleId === role.id && (
+                {showRoleDocs && role.documents.length > 0 && selectedRoleId === role.id && (
                   <div className="mt-3 pt-3 border-t border-[#1E2128]">
                     <p className="text-[10px] uppercase tracking-wider text-[#8B8D93] mb-2">
                       Sides / Documents
@@ -313,8 +326,31 @@ export default function OpenCallView({
         )}
       </div>
 
+      {/* External form redirect */}
+      {selectedRoleId && openCallFormUrl && (
+        <div ref={formRef} className="mb-8 rounded-xl border border-[#1E2128] bg-[#161920] p-6 text-center">
+          <ExternalLink size={24} className="text-[#C9A84C] mx-auto mb-3" />
+          <h2 className="text-sm font-semibold text-[#E8E3D8] mb-2">
+            Complete Your Submission
+          </h2>
+          <p className="text-xs text-[#8B8D93] mb-4">
+            This open call uses an external submission form. Click below to apply.
+          </p>
+          <a
+            href={openCallFormUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#C9A84C] to-[#B8943F] px-6 py-3 text-sm font-semibold text-[#0D0F14] hover:from-[#D4B35C] hover:to-[#C9A84C] transition"
+          >
+            <ExternalLink size={14} />
+            Open Submission Form
+          </a>
+        </div>
+      )}
+
       {/* Step 2: Auth Gate */}
-      {selectedRoleId && isLoggedIn === false && (
+      <div ref={openCallFormUrl ? undefined : formRef} />
+      {selectedRoleId && !openCallFormUrl && isLoggedIn === false && (
         <div className="mb-8 rounded-xl border border-[#1E2128] bg-[#161920] p-6 text-center">
           <User size={24} className="text-[#8B8D93] mx-auto mb-3" />
           <h2 className="text-sm font-semibold text-[#E8E3D8] mb-2">
@@ -341,7 +377,7 @@ export default function OpenCallView({
       )}
 
       {/* Step 3: Submission Form */}
-      {selectedRoleId && isLoggedIn === true && (
+      {selectedRoleId && !openCallFormUrl && isLoggedIn === true && (
         <form onSubmit={handleSubmit}>
           <h2 className="text-sm font-semibold text-[#E8E3D8] mb-3">
             2. Your Details
@@ -533,7 +569,7 @@ export default function OpenCallView({
       )}
 
       {/* Loading state for auth check */}
-      {selectedRoleId && isLoggedIn === null && (
+      {selectedRoleId && !openCallFormUrl && isLoggedIn === null && (
         <div className="text-center py-8">
           <p className="text-sm text-[#8B8D93]">Checking authentication...</p>
         </div>

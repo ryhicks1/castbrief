@@ -13,7 +13,7 @@ export default async function OpenCallPage({
   // Fetch project by open_call_token
   const { data: project, error } = await supabase
     .from("projects")
-    .select("id, name, brand, type, open_call_enabled, open_call_token")
+    .select("id, name, brand, type, open_call_enabled, open_call_token, open_call_form_url, open_call_show_project_docs, open_call_show_role_docs")
     .eq("open_call_token", token)
     .single();
 
@@ -89,6 +89,9 @@ export default async function OpenCallPage({
         roles={rolesWithDocs}
         projectDocuments={projectDocuments || []}
         token={token}
+        openCallFormUrl={project.open_call_form_url}
+        showProjectDocs={project.open_call_show_project_docs ?? true}
+        showRoleDocs={project.open_call_show_role_docs ?? true}
       />
     </div>
   );
