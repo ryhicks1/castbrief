@@ -75,9 +75,9 @@ export default function OpenCallView({
 
   // File uploads
   const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [photoUrl, setPhotoUrl] = useState("");
-  const [mediaUrl, setMediaUrl] = useState("");
+  const [mediaUrls, setMediaUrls] = useState<string[]>([]);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [uploadingMedia, setUploadingMedia] = useState(false);
 
@@ -113,34 +113,21 @@ export default function OpenCallView({
     checkAuth();
   }, []);
 
-  async function uploadFile(
-    file: File,
-    setUrl: (url: string) => void,
-    setUploading: (v: boolean) => void
-  ) {
-    setUploading(true);
-    setError("");
+  async function uploadSingleFile(file: File): Promise<string | null> {
     try {
-      // Upload directly to Supabase Storage (bypasses Vercel 4.5MB body limit)
-      const supabase = createClient();
-      const ext = file.name.split(".").pop() || "bin";
-      const path = `attachments/open-call/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
-
-      const { error: uploadErr } = await supabase.storage
-        .from("media-attachments")
-        .upload(path, file, { contentType: file.type, upsert: false });
-
-      if (uploadErr) {
-        console.error("Direct upload failed:", uploadErr.message);
-        setError("File upload failed: " + uploadErr.message);
-      } else {
-        const { data: { publicUrl } } = supabase.storage.from("media-attachments").getPublicUrl(path);
-        setUrl(publicUrl);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("path", "open-call");
+      const res = await fetch("/api/upload/open-call", { method: "POST", body: formData });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Upload failed");
       }
-    } catch {
-      setError("File upload failed. Please try again.");
-    } finally {
-      setUploading(false);
+      const data = await res.json();
+      return data.url;
+    } catch (err: any) {
+      setError("File upload failed: " + (err.message || "Please try again."));
+      return null;
     }
   }
 
@@ -148,16 +135,32 @@ export default function OpenCallView({
     const file = e.target.files?.[0];
     if (file) {
       setPhotoFile(file);
-      uploadFile(file, setPhotoUrl, setUploadingPhoto);
+      setUploadingPhoto(true);
+      setError("");
+      uploadSingleFile(file).then((url) => {
+        if (url) setPhotoUrl(url);
+        setUploadingPhoto(false);
+      });
     }
   }
 
   function handleMediaSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) {
-      setMediaFile(file);
-      uploadFile(file, setMediaUrl, setUploadingMedia);
-    }
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    setMediaFiles((prev) => [...prev, ...files]);
+    setUploadingMedia(true);
+    setError("");
+
+    Promise.all(files.map((f) => uploadSingleFile(f))).then((urls) => {
+      const validUrls = urls.filter(Boolean) as string[];
+      setMediaUrls((prev) => [...prev, ...validUrls]);
+      setUploadingMedia(false);
+    });
+  }
+
+  function removeMediaFile(index: number) {
+    setMediaFiles((prev) => prev.filter((_, i) => i !== index));
+    setMediaUrls((prev) => prev.filter((_, i) => i !== index));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -180,7 +183,7 @@ export default function OpenCallView({
           location,
           age: age ? parseInt(age) : null,
           photo_url: photoUrl || null,
-          media_url: mediaUrl || null,
+          media_url: mediaUrls.length > 0 ? mediaUrls.join(",") : null,
           notes,
           form_completed: formCompleted,
         }),
@@ -416,31 +419,50 @@ export default function OpenCallView({
               </div>
             </div>
 
-            {/* Self-tape / media */}
+            {/* Self-tape / media — multiple files */}
             <div>
               <label className="block text-xs text-[#8B8D93] mb-1">
-                Self-tape / Media
+                Self-tape / Media (multiple files allowed)
               </label>
               <div className="flex items-center gap-3">
                 <label className="flex items-center gap-2 cursor-pointer rounded-lg border border-[#1E2128] bg-[#161920] px-4 py-2.5 text-xs text-[#8B8D93] hover:border-[#2A2D35] transition">
                   <Upload size={14} />
-                  {uploadingMedia
-                    ? "Uploading..."
-                    : mediaUrl
-                    ? "Change File"
-                    : "Upload Media"}
+                  {uploadingMedia ? "Uploading..." : "Add Files"}
                   <input
                     type="file"
-                    accept="video/*,audio/*"
+                    accept="video/*,audio/*,image/*,.pdf"
                     onChange={handleMediaSelect}
                     className="hidden"
                     disabled={uploadingMedia}
+                    multiple
                   />
                 </label>
-                {mediaUrl && (
-                  <span className="text-xs text-green-400">Uploaded</span>
+                {mediaUrls.length > 0 && (
+                  <span className="text-xs text-green-400">
+                    {mediaUrls.length} file{mediaUrls.length !== 1 ? "s" : ""} uploaded
+                  </span>
                 )}
               </div>
+              {mediaFiles.length > 0 && (
+                <div className="mt-2 space-y-1">
+                  {mediaFiles.map((f, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs text-[#8B8D93]">
+                      <span className={mediaUrls[i] ? "text-green-400" : "text-[#8B8D93]"}>
+                        {mediaUrls[i] ? "✓" : "○"}
+                      </span>
+                      <span className="truncate max-w-[200px]">{f.name}</span>
+                      <span className="text-[#555]">({(f.size / 1024 / 1024).toFixed(1)}MB)</span>
+                      <button
+                        type="button"
+                        onClick={() => removeMediaFile(i)}
+                        className="text-red-400 hover:text-red-300 ml-auto"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Name & Email row */}
