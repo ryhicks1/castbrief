@@ -23,9 +23,11 @@ import {
   Trash2,
   Mail,
   X,
+  Sparkles,
 } from "lucide-react";
 import { Badge, KebabMenu } from "@/components/ui";
 import type { KebabMenuItem } from "@/components/ui";
+import SmartProjectCreatorModal from "./SmartProjectCreatorModal";
 
 function agencyColor(agentId: string): string {
   let hash = 0;
@@ -111,6 +113,7 @@ export default function ProjectDashboard({
   const [emailModalProject, setEmailModalProject] = useState<EnrichedProject | null>(null);
   const [emailMessage, setEmailMessage] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [showSmartCreator, setShowSmartCreator] = useState(false);
 
   const activeProjects = projects.filter((p) => p.status === "active" || p.status === "casting");
   const archivedProjects = projects.filter((p) => p.status === "archived" || p.status === "closed");
@@ -267,12 +270,21 @@ export default function ProjectDashboard({
             </button>
           )}
         </div>
-        <Link
-          href="/client/projects/new"
-          className="inline-flex items-center justify-center rounded-lg bg-[#B8964C] px-4 py-2 text-sm font-semibold text-[#0F0F12] hover:bg-[#C9A64C] hover:shadow-lg hover:shadow-[#B8964C]/10 transition-all duration-300"
-        >
-          + New Project
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowSmartCreator(true)}
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#C9A84C]/30 bg-[#C9A84C]/10 px-4 py-2 text-sm font-semibold text-[#C9A84C] hover:bg-[#C9A84C]/20 transition-all duration-300"
+          >
+            <Sparkles size={14} />
+            Smart Create
+          </button>
+          <Link
+            href="/client/projects/new"
+            className="inline-flex items-center justify-center rounded-lg bg-[#B8964C] px-4 py-2 text-sm font-semibold text-[#0F0F12] hover:bg-[#C9A64C] hover:shadow-lg hover:shadow-[#B8964C]/10 transition-all duration-300"
+          >
+            + New Project
+          </Link>
+        </div>
       </div>
 
       {/* Summary Stats */}
@@ -392,6 +404,16 @@ export default function ProjectDashboard({
           </div>
         </div>
       )}
+
+      {/* Smart Project Creator Modal */}
+      <SmartProjectCreatorModal
+        isOpen={showSmartCreator}
+        onClose={() => setShowSmartCreator(false)}
+        onProjectCreated={(projectId) => {
+          setShowSmartCreator(false);
+          router.push(`/client/projects/${projectId}`);
+        }}
+      />
 
       {/* Toast */}
       {toast && (

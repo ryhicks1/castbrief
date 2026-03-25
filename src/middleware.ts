@@ -5,6 +5,23 @@ const protectedPaths = ["/agent", "/client", "/talent"];
 const authPaths = ["/login", "/signup"];
 
 export async function middleware(request: NextRequest) {
+  // CORS for plugin API routes (Chrome extension)
+  if (request.nextUrl.pathname.startsWith("/api/plugin")) {
+    if (request.method === "OPTIONS") {
+      return new NextResponse(null, {
+        status: 200,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type",
+        },
+      });
+    }
+    const response = NextResponse.next();
+    response.headers.set("Access-Control-Allow-Origin", "*");
+    return response;
+  }
+
   const { user, supabaseResponse } = await updateSession(request);
   const { pathname } = request.nextUrl;
 
